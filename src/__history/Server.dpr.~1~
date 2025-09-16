@@ -1,0 +1,24 @@
+program Server;
+
+{$APPTYPE CONSOLE}
+
+uses
+  System.SysUtils,
+  uServerHorse in 'uServerHorse.pas',
+  uDM in 'uDM.pas',
+  uRouter in 'uRouter.pas',
+  uControllerProdutos in 'uControllerProdutos.pas',
+  uControllerMarcas in 'uControllerMarcas.pas',
+  uControllerGrupos in 'uControllerGrupos.pas';
+
+begin
+  try
+    WriteLn('Iniciando servidor...');
+    StartServer;
+    WriteLn('Servidor em execucao. Pressione ENTER para encerrar.');
+    ReadLn;
+  except
+    on E: Exception do
+      Writeln(E.ClassName, ': ', E.Message);
+  end;
+end.

@@ -1,0 +1,57 @@
+unit uDM;
+
+interface
+
+uses
+  System.SysUtils, System.Classes, System.IniFiles,
+  FireDAC.Comp.Client, FireDAC.Stan.Intf, FireDAC.Stan.Option, FireDAC.Stan.Error,
+  FireDAC.UI.Intf, FireDAC.Phys.Intf, FireDAC.Stan.Def, FireDAC.Stan.Pool,
+  FireDAC.Stan.Async, FireDAC.Phys, FireDAC.Phys.FB, FireDAC.Phys.FBDef,
+  FireDAC.VCLUI.Wait, Data.DB;
+
+type
+  TDM = class(TDataModule)
+    FDConnection: TFDConnection;
+  private
+    procedure LoadConfig;
+  public
+    constructor Create(AOwner: TComponent); override;
+  end;
+
+var
+  DM: TDM;
+
+implementation
+
+{%CLASSGROUP 'Vcl.Controls.TControl'}
+
+constructor TDM.Create(AOwner: TComponent);
+begin
+  inherited;
+  LoadConfig;
+  FDConnection.Connected := True;
+end;
+
+procedure TDM.LoadConfig;
+var
+  INI: TIniFile;
+  LPath: string;
+begin
+  LPath := ExtractFilePath(ParamStr(0)) + '..\config\config.ini';
+  INI := TIniFile.Create(LPath);
+  try
+    FDConnection.Params.Clear;
+    FDConnection.Params.Add('DriverID=' + INI.ReadString('database','DriverID','FB'));
+    FDConnection.Params.Add('Server=' + INI.ReadString('database','Server','localhost'));
+    FDConnection.Params.Add('Port=' + INI.ReadString('database','Port','3050'));
+    FDConnection.Params.Add('Database=' + INI.ReadString('database','Database',''));
+    FDConnection.Params.Add('User_Name=' + INI.ReadString('database','User_Name','SYSDBA'));
+    FDConnection.Params.Add('Password=' + INI.ReadString('database','Password','masterkey'));
+    FDConnection.Params.Add('CharacterSet=' + INI.ReadString('database','CharacterSet','UTF8'));
+    FDConnection.LoginPrompt := False;
+  finally
+    INI.Free;
+  end;
+end;
+
+end.

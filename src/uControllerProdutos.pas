@@ -1,0 +1,301 @@
+﻿unit uControllerProdutos;
+
+interface
+
+uses
+  Horse, System.SysUtils, System.DateUtils, System.JSON, FireDAC.Comp.Client;
+
+procedure ProdutosList(Req: THorseRequest; Res: THorseResponse; Next: TProc);
+procedure ProdutosGet(Req: THorseRequest; Res: THorseResponse; Next: TProc);
+procedure ProdutosPost(Req: THorseRequest; Res: THorseResponse; Next: TProc);
+procedure ProdutosPut(Req: THorseRequest; Res: THorseResponse; Next: TProc);
+procedure ProdutosDelete(Req: THorseRequest; Res: THorseResponse; Next: TProc);
+
+implementation
+
+uses
+  FireDAC.Stan.Param,
+  FireDAC.DApt, uUtilsJSON, uDM, Data.DB;
+
+
+function ParseIsoDate(const S: string): TDateTime;
+begin
+  Result := 0;
+  if Length(S) = 10 then
+  begin
+    if (S[3] = '/') and (S[6] = '/') then
+      // Formato dd/MM/yyyy
+      Result := EncodeDate(
+        StrToIntDef(Copy(S, 7, 4), 0),
+        StrToIntDef(Copy(S, 4, 2), 0),
+        StrToIntDef(Copy(S, 1, 2), 0)
+      )
+    else if (S[5] = '-') and (S[8] = '-') then
+      // Formato yyyy-MM-dd
+      Result := EncodeDate(
+        StrToIntDef(Copy(S, 1, 4), 0),
+        StrToIntDef(Copy(S, 6, 2), 0),
+        StrToIntDef(Copy(S, 9, 2), 0)
+      );
+  end;
+end;
+
+procedure ProdutosList(Req: THorseRequest; Res: THorseResponse; Next: TProc);
+var
+  Q: TFDQuery;
+  Arr: TJSONArray;
+begin
+  Q := TFDQuery.Create(nil);
+  try
+    Q.Connection := DM.FDConnection;
+    Q.SQL.Text :=
+      'SELECT P.PRO_CODIGO, ' +
+      'P.PRO_COD_BARRA, ' +
+      'P.PRO_NOME, ' +
+      'P.PRO_ESTOQ1, ' +
+      'P.PRO_PRECO1, ' +
+      'P.PRO_PRECO2, ' +
+      'P.PRO_VALIDADE, ' +
+      'U.UND_NOME, ' +
+      'G.GP_DESCRI, ' +
+      'M.MAR_DESCRI ' +
+      'FROM PRODUTOS P ' +
+      'LEFT JOIN UNIDADES U ON P.PRO_UNID = U.UND_CODIGO ' +
+      'LEFT JOIN GRUPO G ON P.PRO_GRUPO = G.GP_CODIGO ' +
+      'LEFT JOIN MARCA M ON P.PRO_MARCA = M.MAR_CODIGO ' +
+      'ORDER BY pro_codigo';
+    Q.Open;
+    Arr := DataSetToJSONArray(Q);
+    try
+      Res.ContentType('application/json');
+      Res.Send(Arr.ToJSON);
+    finally
+      Arr.Free;
+    end;
+  finally
+    Q.Free;
+  end;
+end;
+
+procedure ProdutosGet(Req: THorseRequest; Res: THorseResponse; Next: TProc);
+var
+  Q: TFDQuery;
+  Obj: TJSONObject;
+  Id: Integer;
+begin
+  Q := TFDQuery.Create(nil);
+  try
+    Q.Connection := DM.FDConnection;
+    Id := StrToIntDef(Req.Params['id'], -1);
+    Q.SQL.Text :=
+      'SELECT P.PRO_CODIGO, ' +
+      'P.PRO_COD_BARRA, ' +
+      'P.PRO_NOME, ' +
+      'P.PRO_ESTOQ1, ' +
+      'P.PRO_PRECO1, ' +
+      'P.PRO_PRECO2, ' +
+      'P.PRO_VALIDADE, ' +
+      'U.UND_NOME, ' +
+      'G.GP_DESCRI, ' +
+      'M.MAR_DESCRI ' +
+      'FROM PRODUTOS P ' +
+      'LEFT JOIN UNIDADES U ON P.PRO_UNID = U.UND_CODIGO ' +
+      'LEFT JOIN GRUPO G ON P.PRO_GRUPO = G.GP_CODIGO ' +
+      'LEFT JOIN MARCA M ON P.PRO_MARCA = M.MAR_CODIGO';
+    Q.ParamByName('id').AsInteger := Id;
+    Q.Open;
+    Res.ContentType('application/json');
+    if Q.IsEmpty then
+      Res.Status(404).Send('{"error":"Produto nao encontrado"}')
+    else
+    begin
+      Obj := TJSONObject.Create;
+      try
+        Obj.AddPair('pro_codigo', TJSONNumber.Create(Q.FieldByName('pro_codigo').AsInteger));
+        Obj.AddPair('pro_cod_barra', Q.FieldByName('pro_cod_barra').AsString);
+        Obj.AddPair('pro_nome', Q.FieldByName('pro_nome').AsString);
+        Obj.AddPair('pro_preco1', TJSONNumber.Create(Q.FieldByName('pro_preco1').AsFloat));
+        Obj.AddPair('pro_preco2', TJSONNumber.Create(Q.FieldByName('pro_preco2').AsFloat));
+        Obj.AddPair('pro_estoq1', TJSONNumber.Create(Q.FieldByName('pro_estoq1').AsFloat));
+        Obj.AddPair('und_nome', Q.FieldByName('UND_NOME').AsString);
+        Obj.AddPair('gp_descri', Q.FieldByName('GP_DESCRI').AsString);
+        Obj.AddPair('mar_descri', Q.FieldByName('MAR_DESCRI').AsString);
+
+        // Adiciona a data de validade
+        if not Q.FieldByName('pro_validade').IsNull then
+          Obj.AddPair('pro_validade',
+            TJSONString.Create(FormatDateTime('yyyy-mm-dd', Q.FieldByName('pro_validade').AsDateTime)))
+        else
+          Obj.AddPair('pro_validade', TJSONNull.Create);
+
+        Res.Send(Obj.ToJSON);
+      finally
+        Obj.Free;
+      end;
+    end;
+  finally
+    Q.Free;
+  end;
+end;
+
+
+procedure ProdutosPost(Req: THorseRequest; Res: THorseResponse; Next: TProc);
+var
+  RawBody, DataValidadeStr: string;
+  Body: TJSONObject;
+  Q: TFDQuery;
+  NewId: Integer;
+begin
+  RawBody := Req.Body;
+  Writeln('RawBody: ' + RawBody);
+  if RawBody = '' then
+  begin
+    Writeln('Corpo da requisição vazio!');
+    Res.Status(400).Send('{"error":"Corpo da requisição vazio"}');
+    Exit;
+  end;
+  try
+    Body := TJSONObject.ParseJSONValue(RawBody) as TJSONObject;
+  except
+    on E: Exception do
+    begin
+      Writeln('Erro ao converter para JSON: ' + E.Message);
+      Res.Status(400).Send('{"error":"JSON inválido"}');
+      Exit;
+    end;
+  end;
+  if not Assigned(Body) then
+  begin
+    Writeln('JSON Body não recebido ou inválido!');
+    Res.Status(400).Send('{"error":"JSON inválido ou não enviado"}');
+    Exit;
+  end;
+  Writeln(Body.ToString);
+
+  Q := TFDQuery.Create(nil);
+  try
+    Q.Connection := DM.FDConnection;
+
+    Q.SQL.Text := 'SELECT COALESCE(MAX(pro_codigo),0)+1 AS NEXTID FROM PRODUTOS';
+    Q.Open;
+    NewId := Q.FieldByName('NEXTID').AsInteger;
+    Q.Close;
+
+    Q.SQL.Text :=
+      'INSERT INTO PRODUTOS (pro_codigo, pro_cod_barra, pro_nome, pro_preco1, pro_preco2, pro_estoq1, pro_validade, pro_cadastro) ' +
+      'VALUES (:id, :cod_barra, :nome, :preco1, :preco2, :estoque, :validade, CURRENT_DATE)';
+    Q.ParamByName('id').AsInteger := NewId;
+    Q.ParamByName('cod_barra').AsString := Body.GetValue<string>('PRO_COD_BARRA', '');
+    Q.ParamByName('nome').AsString := Body.GetValue<string>('PRO_NOME', '');
+    Q.ParamByName('preco1').AsFloat := Body.GetValue<Double>('PRO_PRECO1', 0);
+    Q.ParamByName('preco2').AsFloat := Body.GetValue<Double>('PRO_PRECO2', 0);
+    Q.ParamByName('estoque').AsFloat := Body.GetValue<Double>('PRO_ESTOQ1', 0);
+
+    DataValidadeStr := Body.GetValue<string>('PRO_VALIDADE', '');
+    if DataValidadeStr <> '' then
+      Q.ParamByName('validade').AsDate := ParseIsoDate(DataValidadeStr)
+    else
+      Q.ParamByName('validade').Clear;
+
+    Q.ExecSQL;
+
+    Res.ContentType('application/json');
+    Res.Status(201).Send(Format('{"message":"Criado","pro_codigo":%d}', [NewId]));
+  finally
+    Q.Free;
+    Body.Free;
+  end;
+end;
+
+
+procedure ProdutosPut(Req: THorseRequest; Res: THorseResponse; Next: TProc);
+var
+  RawBody, DataValidadeStr: string;
+  Body: TJSONObject;
+  Q: TFDQuery;
+  Id: Integer;
+begin
+  Id := StrToIntDef(Req.Params['id'], -1);
+  RawBody := Req.Body;
+  Writeln('RawBody: ' + RawBody);
+  if RawBody = '' then
+  begin
+    Writeln('Corpo da requisição vazio!');
+    Res.Status(400).Send('{"error":"Corpo da requisição vazio"}');
+    Exit;
+  end;
+  try
+    Body := TJSONObject.ParseJSONValue(RawBody) as TJSONObject;
+  except
+    on E: Exception do
+    begin
+      Writeln('Erro ao converter para JSON: ' + E.Message);
+      Res.Status(400).Send('{"error":"JSON inválido"}');
+      Exit;
+    end;
+  end;
+  if not Assigned(Body) then
+  begin
+    Writeln('JSON Body não recebido ou inválido!');
+    Res.Status(400).Send('{"error":"JSON inválido ou não enviado"}');
+    Exit;
+  end;
+  Writeln(Body.ToString);
+
+  Q := TFDQuery.Create(nil);
+  try
+    Q.Connection := DM.FDConnection;
+    Q.SQL.Text :=
+      'UPDATE PRODUTOS SET pro_preco1 = :preco1, pro_preco2 = :preco2, pro_estoq1 = :estoque, pro_validade = :validade WHERE pro_codigo = :id';
+
+    // Lê como Double para máxima compatibilidade
+    Q.ParamByName('preco1').AsFloat := Body.GetValue<Double>('pro_preco1', 0);
+    Q.ParamByName('preco2').AsFloat := Body.GetValue<Double>('pro_preco2', 0);
+    Q.ParamByName('estoque').AsFloat := Body.GetValue<Double>('pro_estoq1', 0);
+
+    DataValidadeStr := Body.GetValue<string>('pro_validade', '');
+    if DataValidadeStr <> '' then
+      Q.ParamByName('validade').AsDate := ParseIsoDate(DataValidadeStr)
+    else
+      Q.ParamByName('validade').Clear;
+
+    Q.ParamByName('id').AsInteger := Id;
+    Q.ExecSQL;
+
+    Res.ContentType('application/json');
+    if Q.RowsAffected = 0 then
+      Res.Status(404).Send('{"error":"Nao atualizado"}')
+    else
+      Res.Send('{"message":"Atualizado"}');
+  finally
+    Q.Free;
+    Body.Free;
+  end;
+end;
+
+
+
+procedure ProdutosDelete(Req: THorseRequest; Res: THorseResponse; Next: TProc);
+var
+  Q: TFDQuery;
+  Id: Integer;
+begin
+  Id := StrToIntDef(Req.Params['id'], -1);
+  Q := TFDQuery.Create(nil);
+  try
+    Q.Connection := DM.FDConnection;
+    Q.SQL.Text := 'DELETE FROM PRODUTOS WHERE pro_codigo = :id';
+    Q.ParamByName('id').AsInteger := Id;
+    Q.ExecSQL;
+    Res.ContentType('application/json');
+    if Q.RowsAffected = 0 then
+      Res.Status(404).Send('{"error":"Nao removido"}')
+    else
+      Res.Send('{"message":"Removido"}');
+  finally
+    Q.Free;
+  end;
+end;
+
+end.
+

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <title>Gestão de Validades</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="./css/styles.css" />
+</head>
+<body>
+  <!-- Drawer / Menu Lateral de Filtros -->
+  <aside id="filter-drawer" class="filter-drawer" aria-hidden="true">
+    <div class="drawer-header">
+      <h2>Filtros & Preferências</h2>
+      <button id="close-drawer" type="button" aria-label="Fechar filtros">×</button>
+    </div>
+    <div class="drawer-content" role="form">
+      <div class="drawer-group">
+        <label for="status-filter">Status</label>
+        <select id="status-filter">
+          <option value="">Todos</option>
+          <option value="OK">OK</option>
+          <option value="ALERTA">Próximo de vencer</option>
+          <option value="VENCIDO">Vencidos</option>
+        </select>
+      </div>
+
+      <div class="drawer-group">
+        <label for="days-threshold">Dias p/ alerta</label>
+        <input id="days-threshold" type="number" min="1" value="15" />
+      </div>
+
+      <div class="drawer-group">
+        <label for="filter-grupo">Grupo</label>
+        <select id="filter-grupo">
+          <option value="">Todos</option>
+        </select>
+      </div>
+
+      <div class="drawer-group">
+        <label for="filter-marca">Marca</label>
+        <select id="filter-marca">
+          <option value="">Todas</option>
+        </select>
+      </div>
+
+      <div class="drawer-group">
+        <label for="group-by">Agrupar por</label>
+        <select id="group-by">
+          <option value="">Nenhum</option>
+          <option value="GP_DESCRI">Grupo</option>
+          <option value="MAR_DESCRI">Marca</option>
+        </select>
+      </div>
+
+      <div class="drawer-group">
+        <label for="theme-select">Tema</label>
+        <select id="theme-select">
+          <option value="dark">Escuro</option>
+          <option value="light">Claro</option>
+        </select>
+      </div>
+
+      <div class="drawer-legend">
+        <span class="badge status-ok">OK</span>
+        <span class="badge status-alerta">Próx. vencer</span>
+        <span class="badge status-vencido">Vencido</span>
+      </div>
+
+      <button id="apply-filters" type="button" class="drawer-apply">Aplicar</button>
+    </div>
+  </aside>
+  <div id="drawer-backdrop" class="drawer-backdrop" hidden></div>
+
+  <!-- Cabeçalho Fixo -->
+  <header class="app-header">
+    <div class="header-left">
+      <button id="open-drawer" class="icon-btn hdr-btn" aria-label="Filtros" title="Filtros">☰</button>
+      <div class="search-box header-search">
+        <input id="search" type="search" placeholder="Buscar (código, nome, marca...)" autocomplete="off" aria-label="Buscar produtos" />
+        <button id="btn-voice" type="button" class="icon-btn" aria-label="Busca por voz" title="Busca por voz">🎤</button>
+        <button id="btn-camera" type="button" class="icon-btn" aria-label="Ler código de barras" title="Ler código de barras">📷</button>
+        <button id="clear-search" type="button" class="icon-btn" aria-label="Limpar busca" title="Limpar busca">×</button>
+      </div>
+    </div>
+    <div class="header-right">
+      <button id="reload-btn" type="button" title="Recarregar dados">Recarregar</button>
+    </div>
+  </header>
+
+  <!-- Conteúdo Principal -->
+  <main class="main-content">
+    <div id="feedback" class="feedback sticky-feedback" aria-live="polite"></div>
+
+    <div class="table-wrapper" id="table-wrapper">
+      <table id="product-table">
+        <thead>
+          <tr>
+            <th data-sort-field="PRO_CODIGO">Cód.</th>
+            <th data-sort-field="PRO_COD_BARRA">Cód. Barra</th>
+            <th data-sort-field="PRO_NOME">Nome</th>
+            <th data-sort-field="UND_NOME">Unid</th>
+            <th data-sort-field="PRO_ESTOQ1">Estoque</th>
+            <th data-sort-field="PRO_PRECO1">Preço 1</th>
+            <th data-sort-field="PRO_PRECO2">Preço 2</th>
+            <th data-sort-field="PRO_VALIDADE">Validade</th>
+            <th data-sort-field="_status">Status</th>
+            <th data-sort-field="MAR_DESCRI">Marca</th>
+            <th data-sort-field="GP_DESCRI">Grupo</th>
+          </tr>
+        </thead>
+        <tbody id="product-tbody"></tbody>
+      </table>
+    </div>
+
+    <div id="cards-container" class="cards-container" aria-live="polite"></div>
+
+    <nav class="pagination" id="pagination" aria-label="Paginação"></nav>
+  </main>
+
+  <!-- Overlay da Câmera -->
+  <div id="camera-overlay" class="camera-overlay" hidden>
+    <div class="camera-box">
+      <div class="camera-header">
+        <h3>Leitor de Código de Barras</h3>
+        <button id="close-camera" type="button" aria-label="Fechar">×</button>
+      </div>
+      <div class="camera-hint">Centralize o código dentro da área de vídeo.</div>
+      <video id="camera-video" playsinline></video>
+      <div class="camera-status" id="camera-status">Iniciando câmera...</div>
+    </div>
+  </div>
+
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>

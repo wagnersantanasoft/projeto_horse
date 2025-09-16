@@ -1,0 +1,50 @@
+unit uUtilsJSON;
+
+interface
+
+uses System.JSON, Data.DB, System.SysUtils;
+
+function DataSetToJSONArray(ADataset: TDataSet): TJSONArray;
+function FieldToJSONValue(Field: TField): TJSONValue;
+
+implementation
+
+function FieldToJSONValue(Field: TField): TJSONValue;
+begin
+  if Field.IsNull then
+    Exit(TJSONNull.Create);
+
+  case Field.DataType of
+    ftInteger, ftSmallint, ftLargeint:
+      Result := TJSONNumber.Create(Field.AsLargeInt);
+    ftFloat, ftBCD, ftFMTBcd, ftCurrency:
+      Result := TJSONNumber.Create(Field.AsFloat);
+    ftString, ftWideString, ftMemo, ftWideMemo:
+      Result := TJSONString.Create(Field.AsString);
+    ftDate, ftDateTime, ftTimeStamp:
+      Result := TJSONString.Create(FormatDateTime('yyyy-mm-dd hh:nn:ss', Field.AsDateTime));
+    ftBoolean:
+      Result := TJSONBool.Create(Field.AsBoolean);
+    else
+      Result := TJSONString.Create(Field.AsString);
+  end;
+end;
+
+function DataSetToJSONArray(ADataset: TDataSet): TJSONArray;
+var
+  Obj: TJSONObject;
+  I: Integer;
+begin
+  Result := TJSONArray.Create;
+  ADataset.First;
+  while not ADataset.Eof do
+  begin
+    Obj := TJSONObject.Create;
+    for I := 0 to ADataset.FieldCount - 1 do
+      Obj.AddElement(ADataset.Fields[I].FieldName, FieldToJSONValue(ADataset.Fields[I]));
+    Result.AddElement(Obj);
+    ADataset.Next;
+  end;
+end;
+
+end.

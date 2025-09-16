@@ -1,0 +1,141 @@
+unit uControllerProdutos;
+
+interface
+
+uses Horse;
+
+procedure ProdutosList(Req: THorseRequest; Res: THorseResponse; Next: TProc);
+procedure ProdutosGet(Req: THorseRequest; Res: THorseResponse; Next: TProc);
+procedure ProdutosPost(Req: THorseRequest; Res: THorseResponse; Next: TProc);
+procedure ProdutosPut(Req: THorseRequest; Res: THorseResponse; Next: TProc);
+procedure ProdutosDelete(Req: THorseRequest; Res: THorseResponse; Next: TProc);
+
+implementation
+
+uses
+  System.JSON, System.SysUtils, FireDAC.Comp.Client, uDM, Data.DB, uUtilsJSON;
+
+procedure ProdutosList(Req: THorseRequest; Res: THorseResponse; Next: TProc);
+var
+  Q: TFDQuery;
+  Arr: TJSONArray;
+begin
+  Q := TFDQuery.Create(nil);
+  try
+    Q.Connection := DM.FDConnection;
+    Q.SQL.Text := 'SELECT pro_codigo, pro_nome, pro_preco1, pro_estoqf FROM PRODUTOS ORDER BY pro_codigo';
+    Q.Open;
+    Arr := DataSetToJSONArray(Q);
+    Res.Send<TJSONArray>(Arr);
+  finally
+    Q.Free;
+  end;
+end;
+
+procedure ProdutosGet(Req: THorseRequest; Res: THorseResponse; Next: TProc);
+var
+  Q: TFDQuery;
+  Obj: TJSONObject;
+begin
+  Q := TFDQuery.Create(nil);
+  try
+    Q.Connection := DM.FDConnection;
+    Q.SQL.Text := 'SELECT pro_codigo, pro_nome, pro_preco1, pro_estoqf FROM PRODUTOS WHERE pro_codigo = :id';
+    Q.ParamByName('id').AsInteger := StrToIntDef(Req.Params['id'], -1);
+    Q.Open;
+    if Q.IsEmpty then
+      Res.Status(404).Send<'string'>('{"error":"Produto nao encontrado"}')
+    else
+    begin
+      Obj := TJSONObject.Create;
+      Obj.AddPair('pro_codigo', TJSONNumber.Create(Q.FieldByName('pro_codigo').AsInteger));
+      Obj.AddPair('pro_nome', Q.FieldByName('pro_nome').AsString);
+      Obj.AddPair('pro_preco1', TJSONNumber.Create(Q.FieldByName('pro_preco1').AsFloat));
+      Obj.AddPair('pro_estoqf', TJSONNumber.Create(Q.FieldByName('pro_estoqf').AsFloat));
+      Res.Send<TJSONObject>(Obj);
+    end;
+  finally
+    Q.Free;
+  end;
+end;
+
+procedure ProdutosPost(Req: THorseRequest; Res: THorseResponse; Next: TProc);
+var
+  Body: TJSONObject;
+  Q: TFDQuery;
+  NewId: Integer;
+begin
+  Body := Req.Body<TJSONObject>;
+  Q := TFDQuery.Create(nil);
+  try
+    Q.Connection := DM.FDConnection;
+
+    // Geração simples de ID (substituir por generator/sequence)
+    Q.SQL.Text := 'SELECT COALESCE(MAX(pro_codigo),0)+1 AS NEXTID FROM PRODUTOS';
+    Q.Open;
+    NewId := Q.FieldByName('NEXTID').AsInteger;
+    Q.Close;
+
+    Q.SQL.Text :=
+      'INSERT INTO PRODUTOS (pro_codigo, pro_nome, pro_preco1, pro_estoqf, pro_cadastro) ' +
+      'VALUES (:id, :nome, :preco, :estoque, CURRENT_DATE)';
+    Q.ParamByName('id').AsInteger := NewId;
+    Q.ParamByName('nome').AsString := Body.GetValue<string>('pro_nome', '');
+    Q.ParamByName('preco').AsFloat := Body.GetValue<Double>('pro_preco1', 0);
+    Q.ParamByName('estoque').AsFloat := Body.GetValue<Double>('pro_estoqf', 0);
+    Q.ExecSQL;
+
+    Res.Status(201).Send(Format('{"message":"Criado","pro_codigo":%d}', [NewId]));
+  finally
+    Q.Free;
+  end;
+end;
+
+procedure ProdutosPut(Req: THorseRequest; Res: THorseResponse; Next: TProc);
+var
+  Body: TJSONObject;
+  Q: TFDQuery;
+  Id: Integer;
+begin
+  Id := StrToIntDef(Req.Params['id'], -1);
+  Body := Req.Body<TJSONObject>;
+  Q := TFDQuery.Create(nil);
+  try
+    Q.Connection := DM.FDConnection;
+    Q.SQL.Text := 'UPDATE PRODUTOS SET pro_nome = :nome, pro_preco1 = :preco, pro_estoqf = :estoque WHERE pro_codigo = :id';
+    Q.ParamByName('nome').AsString := Body.GetValue<string>('pro_nome', '');
+    Q.ParamByName('preco').AsFloat := Body.GetValue<Double>('pro_preco1', 0);
+    Q.ParamByName('estoque').AsFloat := Body.GetValue<Double>('pro_estoqf', 0);
+    Q.ParamByName('id').AsInteger := Id;
+    Q.ExecSQL;
+    if Q.RowsAffected = 0 then
+      Res.Status(404).Send<'string'>('{"error":"Nao atualizado"}')
+    else
+      Res.Send<'string'>('{"message":"Atualizado"}');
+  finally
+    Q.Free;
+  end;
+end;
+
+procedure ProdutosDelete(Req: THorseRequest; Res: THorseResponse; Next: TProc);
+var
+  Q: TFDQuery;
+  Id: Integer;
+begin
+  Id := StrToIntDef(Req.Params['id'], -1);
+  Q := TFDQuery.Create(nil);
+  try
+    Q.Connection := DM.FDConnection;
+    Q.SQL.Text := 'DELETE FROM PRODUTOS WHERE pro_codigo = :id';
+    Q.ParamByName('id').AsInteger := Id;
+    Q.ExecSQL;
+    if Q.RowsAffected = 0 then
+      Res.Status(404).Send<'string'>('{"error":"Nao removido"}')
+    else
+      Res.Send<'string'>('{"message":"Removido"}');
+  finally
+    Q.Free;
+  end;
+end;
+
+end.

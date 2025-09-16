@@ -1,0 +1,60 @@
+:root {
+  --c-vencido: #b00020;
+  --c-alerta: #d97706;
+  --c-valido: #166534;
+  --c-semdata: #64748b;
+  --c-erro: #7f1d1d;
+  --c-bg: #f8fafc;
+  --radius: 4px;
+  font-family: system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: var(--c-bg);
+  padding: 1rem;
+}
+
+.tabela-produtos {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  font-size: clamp(.8rem, .7rem + .4vw, 1rem);
+}
+
+.tabela-produtos th, .tabela-produtos td {
+  padding: .55rem .65rem;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+  vertical-align: top;
+}
+
+.tabela-produtos tbody tr:hover {
+  background: #f1f5f9;
+}
+
+.status-vencido { background: #fee2e2; }
+.status-alerta  { background: #fff7ed; }
+.status-valido  {}
+.status-sem_data { background: #f1f5f9; }
+.status-erro { background: #ffe4e6; }
+
+.badge {
+  display: inline-block;
+  background: #334155;
+  color: #fff;
+  padding: 0 .4em;
+  border-radius: var(--radius);
+  font-size: .65em;
+  margin-left: .25em;
+}
+
+.badge-dup { background: #9333ea; }
+.badge-min { background: #be123c; }
+
+.erros {
+  margin-top: .25rem;
+  color: #b91c1c;
+  font-size: .6rem;
+  line-height: 1.1;
+}
