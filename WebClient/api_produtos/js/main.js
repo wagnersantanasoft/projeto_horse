@@ -5,6 +5,11 @@ import { brToIso, isoToBr } from './dateUtils.js';
 import { paginate, buildPagination } from './pagination.js';
 import { initVoiceSearch, initBarcodeScanner } from './voiceCamera.js';
 
+// Adiciona formatador de número padrão brasileiro
+function formatNum(num) {
+  return Number(num).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 let allProducts = [];
 let filtered = [];
 let currentPage = 1;
@@ -21,6 +26,20 @@ let loading = false;
 const refs = {};
 function qs(id) { return document.getElementById(id); }
 function storageKey(k){ return CONFIG.STORAGE_PREFIX + k; }
+
+// TEMA: alternância automática por horário, mas sempre pode ser ajustado manualmente
+function getDefaultTheme() {
+  const hour = new Date().getHours();
+  return (hour >= 6 && hour < 18) ? 'light' : 'dark';
+}
+function loadTheme() {
+  const userPref = localStorage.getItem(storageKey('theme'));
+  if (userPref) return userPref;
+  return getDefaultTheme();
+}
+function saveTheme(theme) {
+  localStorage.setItem(storageKey('theme'), theme);
+}
 
 function saveState() {
   const state = {
@@ -50,41 +69,46 @@ function loadState() {
     groupBy = s.groupBy ?? '';
     sortField = s.sortField ?? '';
     sortDir = s.sortDir ?? 'asc';
-    if (s.theme) document.documentElement.setAttribute('data-theme', s.theme);
+    // tema preferido do usuário
+    const themePref = s.theme || loadTheme();
+    document.documentElement.setAttribute('data-theme', themePref);
   } catch {}
 }
 
 function initRefs() {
-  refs.tbody = qs('product-tbody');
-  refs.cardsContainer = qs('cards-container');
-  refs.feedback = qs('feedback');
-  refs.reloadBtn = qs('reload-btn');
-  refs.search = qs('search');
-  refs.clearSearch = qs('clear-search');
-
-  // Drawer
-  refs.drawer = qs('filter-drawer');
-  refs.openDrawer = qs('open-drawer');
-  refs.closeDrawer = qs('close-drawer');
-  refs.drawerBackdrop = qs('drawer-backdrop');
-  refs.applyFiltersBtn = qs('apply-filters');
-
-  // Filtros no drawer
-  refs.statusFilter = qs('status-filter');
-  refs.daysThreshold = qs('days-threshold');
-  refs.filterGrupo = qs('filter-grupo');
-  refs.filterMarca = qs('filter-marca');
-  refs.groupBy = qs('group-by');
-  refs.themeSelect = qs('theme-select');
-
-  refs.pagination = qs('pagination');
-  refs.btnVoice = qs('btn-voice');
-  refs.btnCamera = qs('btn-camera');
-  refs.cameraOverlay = qs('camera-overlay');
-  refs.cameraVideo = qs('camera-video');
-  refs.cameraStatus = qs('camera-status');
-  refs.closeCamera = qs('close-camera');
-  refs.table = qs('product-table');
+  // Mobile controls
+  refs.mobileControls = document.getElementById('mobile-controls');
+  refs.openDrawer = document.getElementById('open-drawer');
+  refs.daysThreshold = document.getElementById('days-threshold');
+  refs.reloadBtn = document.getElementById('reload-btn');
+  refs.themeToggle = document.getElementById('theme-toggle');
+  // Desktop controls
+  refs.openDrawerDesktop = document.getElementById('open-drawer-desktop');
+  refs.daysThresholdDesktop = document.getElementById('days-threshold-desktop');
+  refs.reloadBtnDesktop = document.getElementById('reload-btn-desktop');
+  refs.themeToggleDesktop = document.getElementById('theme-toggle-desktop');
+  // Shared
+  refs.tbody = document.getElementById('product-tbody');
+  refs.cardsContainer = document.getElementById('cards-container');
+  refs.feedback = document.getElementById('feedback');
+  refs.search = document.getElementById('search');
+  refs.clearSearch = document.getElementById('clear-search');
+  refs.drawer = document.getElementById('filter-drawer');
+  refs.closeDrawer = document.getElementById('close-drawer');
+  refs.drawerBackdrop = document.getElementById('drawer-backdrop');
+  refs.applyFiltersBtn = document.getElementById('apply-filters');
+  refs.statusFilter = document.getElementById('status-filter');
+  refs.filterGrupo = document.getElementById('filter-grupo');
+  refs.filterMarca = document.getElementById('filter-marca');
+  refs.groupBy = document.getElementById('group-by');
+  refs.pagination = document.getElementById('pagination');
+  refs.btnVoice = document.getElementById('btn-voice');
+  refs.btnCamera = document.getElementById('btn-camera');
+  refs.cameraOverlay = document.getElementById('camera-overlay');
+  refs.cameraVideo = document.getElementById('camera-video');
+  refs.cameraStatus = document.getElementById('camera-status');
+  refs.closeCamera = document.getElementById('close-camera');
+  refs.table = document.getElementById('product-table');
 }
 
 function setFeedback(msg, type='') {
@@ -252,10 +276,14 @@ function renderRow(prod) {
   const tdBarra = document.createElement('td'); tdBarra.innerHTML = highlight(prod.PRO_COD_BARRA, currentSearch);
   const tdNome = document.createElement('td'); tdNome.innerHTML = highlight(prod.PRO_NOME, currentSearch);
   const tdUnid = document.createElement('td'); tdUnid.textContent = prod.UND_NOME;
-  const tdEstoque = document.createElement('td'); tdEstoque.textContent = prod.PRO_ESTOQ1;
-  const tdPreco1 = document.createElement('td'); tdPreco1.textContent = prod.PRO_PRECO1;
-  const tdPreco2 = document.createElement('td'); tdPreco2.textContent = prod.PRO_PRECO2;
-  const tdValidade = document.createElement('td'); tdValidade.appendChild(buildInlineDateDisplay(prod));
+  const tdEstoque = document.createElement('td'); tdEstoque.textContent = formatNum(prod.PRO_ESTOQ1);
+  const tdPreco1 = document.createElement('td'); tdPreco1.textContent = formatNum(prod.PRO_PRECO1);
+  const tdPreco2 = document.createElement('td'); tdPreco2.textContent = formatNum(prod.PRO_PRECO2);
+
+  const tdValidade = document.createElement('td');
+  tdValidade.className = 'inline-validade';
+  tdValidade.appendChild(buildInlineDateDisplay(prod));
+
   const tdStatus = document.createElement('td'); tdStatus.className='status-cell'; tdStatus.innerHTML = statusBadge(prod._status, prod._dias);
   const tdMarca = document.createElement('td'); tdMarca.innerHTML = highlight(prod.MAR_DESCRI, currentSearch);
   const tdGrupo = document.createElement('td'); tdGrupo.innerHTML = highlight(prod.GP_DESCRI, currentSearch);
@@ -289,46 +317,51 @@ function renderCards(slice) {
   }
 }
 
+// ...código anterior...
+
 function renderCard(prod) {
   const card = document.createElement('div');
   card.className = `product-card status-${prod._status}`;
 
-  const header = document.createElement('div');
-  header.className = 'pc-header';
-
-  const title = document.createElement('h3');
+  // Título
+  const title = document.createElement('div');
   title.className = 'pc-title';
   title.innerHTML = highlight(prod.PRO_NOME, currentSearch);
 
-  const unit = document.createElement('div');
-  unit.className = 'pc-unit';
-  unit.textContent = prod.UND_NOME || '-';
-
+  // Badge status
   const statusDiv = document.createElement('div');
   statusDiv.className = 'pc-status';
   statusDiv.innerHTML = statusBadge(prod._status, prod._dias);
 
-  header.append(title, unit, statusDiv);
-
+  // Grid de metadados
   const meta = document.createElement('div');
   meta.className = 'meta-grid';
   meta.innerHTML = `
-    <span><span class="meta-label">Cód</span>${escapeHtml(prod.PRO_CODIGO)}</span>
-    <span><span class="meta-label">Cód. Barra</span>${highlight(prod.PRO_COD_BARRA, currentSearch) || '-'}</span>
-    <span><span class="meta-label">Estoque</span>${escapeHtml(prod.PRO_ESTOQ1)}</span>
-    <span><span class="meta-label">Preço 1</span>${escapeHtml(prod.PRO_PRECO1)}</span>
-    <span><span class="meta-label">Preço 2</span>${escapeHtml(prod.PRO_PRECO2)}</span>
-    <span><span class="meta-label">Marca</span>${highlight(prod.MAR_DESCRI, currentSearch) || '-'}</span>
-    <span><span class="meta-label">Grupo</span>${highlight(prod.GP_DESCRI, currentSearch) || '-'}</span>
+    <span><span class="meta-label">CÓD</span>${escapeHtml(prod.PRO_CODIGO)}</span>
+    <span><span class="meta-label">CÓD. BARRA</span>${escapeHtml(prod.PRO_COD_BARRA)}</span>
+    <span class="meta-grupo"><span class="meta-label">GRUPO</span>${escapeHtml(prod.GP_DESCRI)}</span>
+    <span><span class="meta-label">PREÇO 1</span>${formatNum(prod.PRO_PRECO1)}</span>
+    <span><span class="meta-label">PREÇO 2</span>${formatNum(prod.PRO_PRECO2)}</span>
+    <span class="meta-marca"><span class="meta-label">MARCA</span>${escapeHtml(prod.MAR_DESCRI) || '-'}</span>
+    <span class="meta-estoque">
+      <span class="meta-label">ESTOQUE</span>
+      <span>
+        <span class="estoque-valor">${formatNum(prod.PRO_ESTOQ1)}</span>
+        <span class="estoque-unid">${escapeHtml(prod.UND_NOME)}</span>
+      </span>
+    </span>
   `;
 
+  // Validade
   const validadeRow = document.createElement('div');
   validadeRow.className = 'pc-validade';
   validadeRow.appendChild(buildInlineDateDisplay(prod));
 
-  card.append(header, meta, validadeRow);
+  card.append(title, statusDiv, meta, validadeRow);
   return card;
 }
+
+// ...restante igual...
 
 function buildInlineDateDisplay(prod) {
   const wrapper = document.createElement('div');
@@ -446,7 +479,6 @@ function openDrawer() {
   refs.drawerBackdrop.hidden = false;
   document.body.style.overflow = 'hidden';
 }
-
 function closeDrawer() {
   refs.drawer.classList.remove('open');
   refs.drawer.setAttribute('aria-hidden','true');
@@ -455,14 +487,51 @@ function closeDrawer() {
 }
 
 function bindEvents() {
-  refs.reloadBtn.addEventListener('click', () => loadProducts());
+  // Mobile
+  refs.reloadBtn?.addEventListener('click', () => loadProducts());
+  refs.daysThreshold?.addEventListener('change', () => {
+    const v = Number(refs.daysThreshold.value);
+    if (v > 0) {
+      daysThreshold = v;
+      computeAllStatuses();
+      applyFilters(false);
+      saveState();
+    }
+  });
+  refs.themeToggle?.addEventListener('click', () => toggleTheme(refs.themeToggle));
+  refs.openDrawer?.addEventListener('click', openDrawer);
+
+  // Desktop
+  refs.reloadBtnDesktop?.addEventListener('click', () => loadProducts());
+  refs.daysThresholdDesktop?.addEventListener('change', () => {
+    const v = Number(refs.daysThresholdDesktop.value);
+    if (v > 0) {
+      daysThreshold = v;
+      computeAllStatuses();
+      applyFilters(false);
+      saveState();
+    }
+  });
+  refs.themeToggleDesktop?.addEventListener('click', () => toggleTheme(refs.themeToggleDesktop));
+  refs.openDrawerDesktop?.addEventListener('click', openDrawer);
+
+  // Shared
+  refs.closeDrawer.addEventListener('click', closeDrawer);
+  refs.drawerBackdrop.addEventListener('click', closeDrawer);
+  refs.applyFiltersBtn.addEventListener('click', () => {
+    currentStatusFilter = refs.statusFilter.value;
+    currentGrupo = refs.filterGrupo.value;
+    currentMarca = refs.filterMarca.value;
+    groupBy = refs.groupBy.value;
+    applyFilters();
+    closeDrawer();
+  });
   refs.clearSearch.addEventListener('click', () => {
     refs.search.value = '';
     currentSearch = '';
     applyFilters(false);
     refs.search.focus();
   });
-
   let debounceId;
   refs.search.addEventListener('input', () => {
     clearTimeout(debounceId);
@@ -471,24 +540,6 @@ function bindEvents() {
       applyFilters(false);
     }, 220);
   });
-
-  // Drawer events
-  refs.openDrawer.addEventListener('click', openDrawer);
-  refs.closeDrawer.addEventListener('click', closeDrawer);
-  refs.drawerBackdrop.addEventListener('click', closeDrawer);
-  refs.applyFiltersBtn.addEventListener('click', () => {
-    currentStatusFilter = refs.statusFilter.value;
-    daysThreshold = Number(refs.daysThreshold.value) || 15;
-    currentGrupo = refs.filterGrupo.value;
-    currentMarca = refs.filterMarca.value;
-    groupBy = refs.groupBy.value;
-    // tema
-    const theme = refs.themeSelect.value;
-    document.documentElement.setAttribute('data-theme', theme);
-    applyFilters();
-    closeDrawer();
-  });
-
   refs.table.querySelector('thead').addEventListener('click', handleHeaderClick);
 
   initVoiceSearch({
@@ -526,25 +577,40 @@ function bindEvents() {
   });
 }
 
+function toggleTheme(btn) {
+  const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', current);
+  btn.textContent = current === 'light' ? '🌙' : '☀️';
+  saveTheme(current);
+  saveState();
+  // Sincroniza símbolo no outro botão
+  if (refs.themeToggle && refs.themeToggle !== btn) refs.themeToggle.textContent = btn.textContent;
+  if (refs.themeToggleDesktop && refs.themeToggleDesktop !== btn) refs.themeToggleDesktop.textContent = btn.textContent;
+}
+
 function syncInputsFromState() {
   refs.search.value = currentSearch;
   refs.statusFilter.value = currentStatusFilter;
-  refs.daysThreshold.value = daysThreshold;
   refs.filterGrupo.value = currentGrupo;
   refs.filterMarca.value = currentMarca;
   refs.groupBy.value = groupBy;
-  refs.themeSelect.value = document.documentElement.getAttribute('data-theme') || 'dark';
+  // Sincroniza ambos inputs de dias
+  if (refs.daysThreshold) refs.daysThreshold.value = daysThreshold;
+  if (refs.daysThresholdDesktop) refs.daysThresholdDesktop.value = daysThreshold;
+  // Sincroniza ambos botões de tema
+  const themeSymbol = document.documentElement.getAttribute('data-theme') === 'light' ? '🌙' : '☀️';
+  if (refs.themeToggle) refs.themeToggle.textContent = themeSymbol;
+  if (refs.themeToggleDesktop) refs.themeToggleDesktop.textContent = themeSymbol;
 }
 
 function init() {
+  document.documentElement.setAttribute('data-theme', loadTheme());
   loadState();
   window.__USER_INTERACTED__ = false;
   window.addEventListener('pointerdown', () => { window.__USER_INTERACTED__ = true; }, { once: true });
   window.addEventListener('keydown', () => { window.__USER_INTERACTED__ = true; }, { once: true });
-
   initRefs();
   bindEvents();
   loadProducts();
 }
-
 document.addEventListener('DOMContentLoaded', init);

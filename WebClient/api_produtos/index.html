@@ -23,26 +23,18 @@
           <option value="VENCIDO">Vencidos</option>
         </select>
       </div>
-
-      <div class="drawer-group">
-        <label for="days-threshold">Dias p/ alerta</label>
-        <input id="days-threshold" type="number" min="1" value="15" />
-      </div>
-
       <div class="drawer-group">
         <label for="filter-grupo">Grupo</label>
         <select id="filter-grupo">
           <option value="">Todos</option>
         </select>
       </div>
-
       <div class="drawer-group">
         <label for="filter-marca">Marca</label>
         <select id="filter-marca">
           <option value="">Todas</option>
         </select>
       </div>
-
       <div class="drawer-group">
         <label for="group-by">Agrupar por</label>
         <select id="group-by">
@@ -51,46 +43,44 @@
           <option value="MAR_DESCRI">Marca</option>
         </select>
       </div>
-
-      <div class="drawer-group">
-        <label for="theme-select">Tema</label>
-        <select id="theme-select">
-          <option value="dark">Escuro</option>
-          <option value="light">Claro</option>
-        </select>
-      </div>
-
       <div class="drawer-legend">
         <span class="badge status-ok">OK</span>
         <span class="badge status-alerta">Próx. vencer</span>
         <span class="badge status-vencido">Vencido</span>
       </div>
-
       <button id="apply-filters" type="button" class="drawer-apply">Aplicar</button>
     </div>
   </aside>
   <div id="drawer-backdrop" class="drawer-backdrop" hidden></div>
 
-  <!-- Cabeçalho Fixo -->
-  <header class="app-header">
+  <!-- MOBILE CONTROLS: topo da tela (só aparecem em smartphone) -->
+  <div class="mobile-controls" id="mobile-controls">
+    <button id="open-drawer" class="icon-btn hdr-btn" aria-label="Filtros" title="Filtros">☰</button>
+    <input id="days-threshold" class="days-header-input" type="number" min="1" value="15" title="Dias para alerta de validade" aria-label="Dias para alerta de validade"/>
+    <button id="reload-btn" type="button" class="icon-btn" title="Recarregar dados">⟳</button>
+    <button id="theme-toggle" type="button" class="icon-btn" aria-label="Alternar tema" title="Alternar tema">🌙</button>
+  </div>
+
+  <!-- Cabeçalho fixo (topo em desktop/tablet, rodapé em smartphone) -->
+  <header class="app-header" id="main-header">
     <div class="header-left">
-      <button id="open-drawer" class="icon-btn hdr-btn" aria-label="Filtros" title="Filtros">☰</button>
+      <button id="open-drawer-desktop" class="icon-btn hdr-btn" aria-label="Filtros" title="Filtros">☰</button>
       <div class="search-box header-search">
         <input id="search" type="search" placeholder="Buscar (código, nome, marca...)" autocomplete="off" aria-label="Buscar produtos" />
         <button id="btn-voice" type="button" class="icon-btn" aria-label="Busca por voz" title="Busca por voz">🎤</button>
         <button id="btn-camera" type="button" class="icon-btn" aria-label="Ler código de barras" title="Ler código de barras">📷</button>
         <button id="clear-search" type="button" class="icon-btn" aria-label="Limpar busca" title="Limpar busca">×</button>
       </div>
+      <input id="days-threshold-desktop" class="days-header-input" type="number" min="1" value="15" title="Dias para alerta de validade" aria-label="Dias para alerta de validade"/>
     </div>
     <div class="header-right">
-      <button id="reload-btn" type="button" title="Recarregar dados">Recarregar</button>
+      <button id="theme-toggle-desktop" type="button" class="icon-btn" aria-label="Alternar tema" title="Alternar tema">🌙</button>
+      <button id="reload-btn-desktop" type="button" class="icon-btn" title="Recarregar dados">⟳</button>
     </div>
   </header>
 
-  <!-- Conteúdo Principal -->
   <main class="main-content">
     <div id="feedback" class="feedback sticky-feedback" aria-live="polite"></div>
-
     <div class="table-wrapper" id="table-wrapper">
       <table id="product-table">
         <thead>
@@ -111,13 +101,9 @@
         <tbody id="product-tbody"></tbody>
       </table>
     </div>
-
     <div id="cards-container" class="cards-container" aria-live="polite"></div>
-
     <nav class="pagination" id="pagination" aria-label="Paginação"></nav>
   </main>
-
-  <!-- Overlay da Câmera -->
   <div id="camera-overlay" class="camera-overlay" hidden>
     <div class="camera-box">
       <div class="camera-header">
@@ -129,7 +115,6 @@
       <div class="camera-status" id="camera-status">Iniciando câmera...</div>
     </div>
   </div>
-
   <script type="module" src="./js/main.js"></script>
 </body>
 </html>
