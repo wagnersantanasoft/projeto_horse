@@ -7,6 +7,9 @@
   <link rel="stylesheet" href="./css/styles.css" />
 </head>
 <body>
+  <header class="mobile-header" id="mobile-header">
+  <button id="open-drawer" class="icon-btn hdr-btn only-mobile" aria-label="Filtros" title="Filtros">☰</button>
+  </header>
   <!-- Drawer / Menu Lateral de Filtros -->
   <aside id="filter-drawer" class="filter-drawer" aria-hidden="true">
     <div class="drawer-header">
@@ -15,7 +18,6 @@
     </div>
     <div class="drawer-content" role="form">
       <div class="drawer-group">
-  <button id="apply-filters" type="button" class="drawer-apply">Aplicar</button>
         <label for="status-filter">Status</label>
         <select id="status-filter">
           <option value="">Todos</option>
@@ -58,52 +60,43 @@
         <span class="badge status-vencido">Vencido</span>
       </div>
       <div class="drawer-group">
-        <label for="estoque-positivo" style="margin-right: 10px;">Positivo</label>
-        <label class="switch">
-          <input type="checkbox" id="estoque-positivo" />
-          <span class="slider"></span>
-        </label>
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <label for="estoque-positivo" style="margin-right: 10px;">Positivo</label>
+          <label class="switch">
+            <input type="checkbox" id="estoque-positivo" />
+            <span class="slider"></span>
+          </label>
+          <label for="tema" style="margin-right: 10px;">Tema</label>
+          <button id="theme-toggle-desktop" type="button" class="icon-btn" aria-label="Alternar tema" title="Alternar tema">🌙</button>
+        </div>
+        
       </div>
       <div class="drawer-group">
         <label for="progress-bar">Tamanho da fonte</label>
         <div id="progress-bar-container" style="width: 100%; background: #eee; border-radius: 8px; height: 24px; margin-top: 6px;">
           <div id="progress-bar" style="width: 50%; height: 100%; background: linear-gradient(90deg, #4caf50, #2196f3); border-radius: 8px; transition: width 0.3s;"></div>
         </div>
-        <span id="progress-value" style="display: block; text-align: right; font-size: 0.95em; margin-top: 2px; color: #333;">50%</span>
+        <span id="progress-value" style="display: block; text-align: right; font-size: 0.95em; margin-top: 2px; color: #333;">2'0%</span>
+      </div>
+      <div class="drawer-group" style="margin-bottom: 0;">
+        <button id="apply-filters" type="button" class="drawer-apply">Aplicar</button>
       </div>
     </div>
   </aside>
   <div id="drawer-backdrop" class="drawer-backdrop" hidden></div>
 
   <!-- MOBILE CONTROLS: topo da tela (só aparecem em smartphone) -->
-  <div class="mobile-search-wrapper mobile-search-bottom">
-    <input id="search-mobile" type="search" placeholder="Buscar (código, nome, marca...)" autocomplete="off" aria-label="Buscar produtos" class="mobile-search-input" />
-  </div>
-  <header class="mobile-header" id="mobile-header">
-    <div class="mobile-header-left" style="display: flex; align-items: center; gap: 8px; flex: 1;">
-      <button id="open-drawer" class="icon-btn hdr-btn" aria-label="Filtros" title="Filtros">☰</button>
-    </div>
-    <div class="mobile-header-right" style="display: flex; align-items: center; gap: 8px;">
-      <button id="theme-toggle" type="button" class="icon-btn" aria-label="Alternar tema" title="Alternar tema">🌙</button>
-    </div>
-  </header>
 
   <!-- Cabeçalho fixo (topo em desktop/tablet, rodapé em smartphone) -->
   <header class="app-header" id="main-header">
-    <div class="header-left">
-      <button id="open-drawer-desktop" class="icon-btn hdr-btn" aria-label="Filtros" title="Filtros">☰</button>
-    </div>
-    <div class="header-center">
-      <div class="search-box header-search">
+    <div style="display: flex; align-items: center; gap: 0.7rem;">
+  <button id="open-drawer-desktop" class="icon-btn hdr-btn only-desktop" aria-label="Filtros" title="Filtros">☰</button>
+      <div class="search-box header-search" style="margin-left: 0;">
         <input id="search" type="search" placeholder="Buscar (código, nome, marca...)" autocomplete="off" aria-label="Buscar produtos" />
         <button id="btn-voice" type="button" class="icon-btn" aria-label="Busca por voz" title="Busca por voz">🎤</button>
         <button id="btn-camera" type="button" class="icon-btn" aria-label="Ler código de barras" title="Ler código de barras">📷</button>
         <button id="clear-search" type="button" class="icon-btn" aria-label="Limpar busca" title="Limpar busca">×</button>
       </div>
-    </div>
-    <div class="header-right">
-      <button id="theme-toggle-desktop" type="button" class="icon-btn" aria-label="Alternar tema" title="Alternar tema">🌙</button>
-      
     </div>
   </header>
 

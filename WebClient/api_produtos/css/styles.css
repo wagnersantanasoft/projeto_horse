@@ -1,3 +1,81 @@
+/* Controle de exibição dos botões de abrir aside */
+.only-mobile { display: none !important; }
+.only-desktop { display: inline-flex !important; }
+@media (max-width: 760px) {
+  .only-mobile { display: inline-flex !important; }
+  .only-desktop { display: none !important; }
+}
+/* Desktop: alinhar input de busca à esquerda */
+@media (min-width: 761px) {
+  .header-center {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    flex: 1;
+  }
+  .search-box.header-search {
+    margin-left: -50%;
+    margin-right: auto;
+    max-width: 480px;
+  }
+}
+/* DESKTOP ONLY: configurações específicas para navegador em computador */
+@media (min-width: 761px) {
+  .app-header, .main-header {
+    position: sticky;
+    top: 0;
+    left: 0; right: 0;
+    z-index: 100;
+    background: var(--c-panel);
+    border-bottom: 1px solid var(--c-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: var(--header-height);
+    padding: 0 2.5rem;
+    box-shadow: 0 1px 8px 0 rgba(0,0,0,.09);
+    flex-wrap: nowrap;
+  }
+  .main-content {
+    padding: 1.5rem 2.5rem 2.5rem;
+    max-width: 1700px;
+    margin: 0 auto;
+  }
+  .table-wrapper {
+    margin-top: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px -2px rgba(0,0,0,.08);
+  }
+  .search-box.header-search input {
+    font-size: 1rem;
+    padding: .7rem 1rem;
+  }
+  th, td {
+    font-size: .95rem;
+    padding: .7rem 1rem;
+  }
+  th {
+    font-size: .85rem;
+  }
+  .drawer-content {
+    max-height: calc(100vh - 80px);
+  }
+  .drawer-group label {
+    font-size: .75rem;
+  }
+  .drawer-apply {
+    font-size: .85rem;
+    padding: .65rem 1.1rem;
+  }
+  .badge {
+    font-size: .68rem;
+    padding: .28rem .52rem;
+  }
+  .cards-container {
+    gap: 1.2rem;
+    margin-top: 1.2rem;
+  }
+}
 /* Switch liga/desliga para filtro de estoque positivo */
 .switch {
   position: relative;

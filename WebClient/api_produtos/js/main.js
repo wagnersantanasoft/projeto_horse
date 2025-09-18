@@ -82,6 +82,16 @@ function initRefs() {
   refs.estoquePositivo = document.getElementById('estoque-positivo');
   refs.customDateStart = document.getElementById('custom-date-start');
   refs.customDateEnd = document.getElementById('custom-date-end');
+  // Define datas padrão ao abrir (após garantir que os elementos existem)
+  if (refs.customDateStart && refs.customDateEnd) {
+    const hoje = new Date();
+    const padStart = hoje.toISOString().slice(0,10);
+    const padEnd = new Date(hoje.getTime() + 30*24*60*60*1000).toISOString().slice(0,10);
+    refs.customDateStart.value = padStart;
+    refs.customDateEnd.value = padEnd;
+    customDateStart = padStart;
+    customDateEnd = padEnd;
+  }
   // Progresso para fonte
   refs.progressBar = document.getElementById('progress-bar');
   refs.progressValue = document.getElementById('progress-value');
@@ -94,22 +104,22 @@ function initRefs() {
   }
 // Atualiza o tamanho da fonte dos cards e da tabela
 function setFontSize(percent) {
-  const minDate = 0.7, maxDate = 1.14;
-  const minDateBtn = 0.65, maxDateBtn = 1.0;
+  const minDate = 0.567, maxDate = 0.9234;
+  const minDateBtn = 0.5265, maxDateBtn = 0.81;
   const dateFont = minDate + (maxDate-minDate)*(percent/100);
   const dateBtnFont = minDateBtn + (maxDateBtn-minDateBtn)*(percent/100);
   document.documentElement.style.setProperty('--card-date-font', dateFont+'em');
   document.documentElement.style.setProperty('--card-date-btn-font', dateBtnFont+'em');
   // percent: 0 a 100
   // Cards (mobile)
-  const minCard = 0.85, maxCard = 1.25;
-  const minTitle = 0.75, maxTitle = 1.5;
-  const minMeta = 0.7, maxMeta = 1.2;
-  const minStatus = 0.7, maxStatus = 1.1;
-  const minBadge = 0.65, maxBadge = 1.0;
+  const minCard = 0.6885, maxCard = 1.0125;
+  const minTitle = 0.6075, maxTitle = 1.215;
+  const minMeta = 0.567, maxMeta = 0.972;
+  const minStatus = 0.567, maxStatus = 0.891;
+  const minBadge = 0.5265, maxBadge = 0.81;
   // Tabela (desktop)
-  const minTable = 0.85, maxTable = 1.18;
-  const minTh = 0.85, maxTh = 1.18;
+  const minTable = 0.6885, maxTable = 0.9558;
+  const minTh = 0.6885, maxTh = 0.9558;
   // Calcula valores
   const cardFont = minCard + (maxCard-minCard)*(percent/100);
   const titleFont = minTitle + (maxTitle-minTitle)*(percent/100);
