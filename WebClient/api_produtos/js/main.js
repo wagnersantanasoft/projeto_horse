@@ -76,6 +76,82 @@ function loadState() {
 }
 
 function initRefs() {
+  // Progresso para fonte
+  refs.progressBar = document.getElementById('progress-bar');
+  refs.progressValue = document.getElementById('progress-value');
+  refs.progressBarContainer = document.getElementById('progress-bar-container');
+  // Carregar tamanho da fonte salvo
+  const fontSize = localStorage.getItem(storageKey('fontSize'));
+  if (fontSize) {
+    setFontSize(Number(fontSize));
+    updateProgressBar(Number(fontSize));
+  }
+// Atualiza o tamanho da fonte dos cards e da tabela
+function setFontSize(percent) {
+  const minDate = 0.7, maxDate = 1.14;
+  const minDateBtn = 0.65, maxDateBtn = 1.0;
+  const dateFont = minDate + (maxDate-minDate)*(percent/100);
+  const dateBtnFont = minDateBtn + (maxDateBtn-minDateBtn)*(percent/100);
+  document.documentElement.style.setProperty('--card-date-font', dateFont+'em');
+  document.documentElement.style.setProperty('--card-date-btn-font', dateBtnFont+'em');
+  // percent: 0 a 100
+  // Cards (mobile)
+  const minCard = 0.85, maxCard = 1.25;
+  const minTitle = 0.75, maxTitle = 1.5;
+  const minMeta = 0.7, maxMeta = 1.2;
+  const minStatus = 0.7, maxStatus = 1.1;
+  const minBadge = 0.65, maxBadge = 1.0;
+  // Tabela (desktop)
+  const minTable = 0.85, maxTable = 1.18;
+  const minTh = 0.85, maxTh = 1.18;
+  // Calcula valores
+  const cardFont = minCard + (maxCard-minCard)*(percent/100);
+  const titleFont = minTitle + (maxTitle-minTitle)*(percent/100);
+  const metaFont = minMeta + (maxMeta-minMeta)*(percent/100);
+  const statusFont = minStatus + (maxStatus-minStatus)*(percent/100);
+  const badgeFont = minBadge + (maxBadge-minBadge)*(percent/100);
+  const tableFont = minTable + (maxTable-minTable)*(percent/100);
+  const thFont = minTh + (maxTh-minTh)*(percent/100);
+  // Cards
+  document.documentElement.style.setProperty('--card-font', cardFont+'rem');
+  document.documentElement.style.setProperty('--card-title-font', titleFont+'rem');
+  document.documentElement.style.setProperty('--card-meta-font', metaFont+'em');
+  document.documentElement.style.setProperty('--card-status-font', statusFont+'rem');
+  document.documentElement.style.setProperty('--card-badge-font', badgeFont+'rem');
+  // Tabela
+  document.documentElement.style.setProperty('--table-font', tableFont+'rem');
+  document.documentElement.style.setProperty('--table-th-font', thFont+'rem');
+  // Salva
+  localStorage.setItem(storageKey('fontSize'), percent);
+}
+
+function updateProgressBar(percent) {
+  if (refs.progressBar) {
+    refs.progressBar.style.width = percent + '%';
+  }
+  if (refs.progressValue) {
+    refs.progressValue.textContent = percent + '%';
+  }
+}
+
+function initFontSizeControl() {
+  if (!refs.progressBarContainer) return;
+  let percent = 50;
+  const saved = localStorage.getItem(storageKey('fontSize'));
+  if (saved) percent = Number(saved);
+  setFontSize(percent);
+  updateProgressBar(percent);
+  refs.progressBarContainer.onclick = function(e) {
+    const rect = refs.progressBarContainer.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    let percent = Math.round((x/rect.width)*100);
+    percent = Math.max(0, Math.min(100, percent));
+    setFontSize(percent);
+    updateProgressBar(percent);
+  };
+}
+  // Inicializa controle de fonte
+  setTimeout(initFontSizeControl, 300);
   // Mobile controls
   refs.mobileControls = document.getElementById('mobile-controls');
   refs.openDrawer = document.getElementById('open-drawer');
@@ -576,6 +652,28 @@ function bindEvents() {
     }
   });
 }
+
+function bindFontSizeControls() {
+  const controls = document.getElementById('font-size-controls');
+  if (!controls) return;
+  controls.querySelectorAll('.font-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      controls.querySelectorAll('.font-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.body.classList.remove('font-size-small', 'font-size-normal', 'font-size-large');
+      document.body.classList.add('font-size-' + btn.dataset.size);
+      localStorage.setItem(storageKey('fontSize'), btn.dataset.size);
+    });
+  });
+  // carregar preferência
+  const saved = localStorage.getItem(storageKey('fontSize')) || 'normal';
+  document.body.classList.remove('font-size-small', 'font-size-normal', 'font-size-large');
+  document.body.classList.add('font-size-' + saved);
+  controls.querySelectorAll('.font-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.size === saved);
+  });
+}
+bindFontSizeControls();
 
 function toggleTheme(btn) {
   const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
