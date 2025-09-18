@@ -44,9 +44,13 @@
           <option value="MAR_DESCRI">Marca</option>
         </select>
       </div>
+       
       <!-- CONTROLE DE TAMANHO DE FONTE -->
       <div class="drawer-group">
-  <!-- Controle de tamanho de fonte agora é feito pela barra de progresso -->
+        <label for="custom-date-start">Validade de</label>
+        <input type="date" id="custom-date-start" />
+        <label for="custom-date-end">até</label>
+        <input type="date" id="custom-date-end" />
       </div>
       <div class="drawer-legend">
         <span class="badge status-ok">OK</span>
@@ -54,7 +58,14 @@
         <span class="badge status-vencido">Vencido</span>
       </div>
       <div class="drawer-group">
-    <label for="progress-bar">Tamanho da fonte</label>
+        <label for="estoque-positivo" style="margin-right: 10px;">Positivo</label>
+        <label class="switch">
+          <input type="checkbox" id="estoque-positivo" />
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="drawer-group">
+        <label for="progress-bar">Tamanho da fonte</label>
         <div id="progress-bar-container" style="width: 100%; background: #eee; border-radius: 8px; height: 24px; margin-top: 6px;">
           <div id="progress-bar" style="width: 50%; height: 100%; background: linear-gradient(90deg, #4caf50, #2196f3); border-radius: 8px; transition: width 0.3s;"></div>
         </div>
@@ -69,15 +80,10 @@
     <input id="search-mobile" type="search" placeholder="Buscar (código, nome, marca...)" autocomplete="off" aria-label="Buscar produtos" class="mobile-search-input" />
   </div>
   <header class="mobile-header" id="mobile-header">
-    <div class="mobile-header-left">
+    <div class="mobile-header-left" style="display: flex; align-items: center; gap: 8px; flex: 1;">
       <button id="open-drawer" class="icon-btn hdr-btn" aria-label="Filtros" title="Filtros">☰</button>
-      <div class="mobile-header-input-group" style="flex-direction: row; align-items: center; gap: 6px;">
-        <label for="days-threshold" class="mobile-header-label" style="margin-bottom: 0;">Dias para vencer</label>
-        <input id="days-threshold" class="days-header-input" type="number" min="1" value="15" title="Dias para alerta de validade" aria-label="Dias para alerta de validade" />
-      </div>
-      <button id="reload-btn" type="button" class="reload-btn-highlight" title="Recarregar dados">⟳</button>
     </div>
-    <div class="mobile-header-right">
+    <div class="mobile-header-right" style="display: flex; align-items: center; gap: 8px;">
       <button id="theme-toggle" type="button" class="icon-btn" aria-label="Alternar tema" title="Alternar tema">🌙</button>
     </div>
   </header>
@@ -86,7 +92,6 @@
   <header class="app-header" id="main-header">
     <div class="header-left">
       <button id="open-drawer-desktop" class="icon-btn hdr-btn" aria-label="Filtros" title="Filtros">☰</button>
-      <input id="days-threshold-desktop" class="days-header-input" type="number" min="1" value="15" title="Dias para alerta de validade" aria-label="Dias para alerta de validade"/>
     </div>
     <div class="header-center">
       <div class="search-box header-search">
@@ -98,7 +103,7 @@
     </div>
     <div class="header-right">
       <button id="theme-toggle-desktop" type="button" class="icon-btn" aria-label="Alternar tema" title="Alternar tema">🌙</button>
-      <button id="reload-btn-desktop" type="button" class="icon-btn" title="Recarregar dados">⟳</button>
+      
     </div>
   </header>
 

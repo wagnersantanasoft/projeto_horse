@@ -18,6 +18,9 @@ let daysThreshold = 15;
 let currentStatusFilter = '';
 let currentGrupo = '';
 let currentMarca = '';
+let estoquePositivo = false;
+let customDateStart = '';
+let customDateEnd = '';
 let groupBy = '';
 let sortField = '';
 let sortDir = 'asc';
@@ -76,6 +79,9 @@ function loadState() {
 }
 
 function initRefs() {
+  refs.estoquePositivo = document.getElementById('estoque-positivo');
+  refs.customDateStart = document.getElementById('custom-date-start');
+  refs.customDateEnd = document.getElementById('custom-date-end');
   // Progresso para fonte
   refs.progressBar = document.getElementById('progress-bar');
   refs.progressValue = document.getElementById('progress-value');
@@ -242,7 +248,34 @@ function applyFilters(recalcStatus = true) {
   if (recalcStatus) computeAllStatuses();
   const tokens = tokenize(currentSearch);
   filtered = allProducts.filter(p => {
-    if (currentStatusFilter && p._status !== currentStatusFilter) return false;
+    // Filtro de estoque positivo
+    if (estoquePositivo && Number(p.PRO_ESTOQ1) <= 0) return false;
+  // Evento para filtro de estoque positivo
+  if (refs.estoquePositivo) {
+    refs.estoquePositivo.onchange = function(e) {
+      estoquePositivo = e.target.checked;
+      applyFilters();
+    };
+  }
+    // Filtro personalizado por intervalo de datas
+    if (customDateStart && customDateEnd) {
+      const val = p.PRO_VALIDADE;
+      if (!val) return false;
+      const valIso = brToIso(val);
+      if (valIso < customDateStart || valIso > customDateEnd) return false;
+    }
+    // Filtro por status
+    if (currentStatusFilter === 'ALERTA') {
+      if (!(p._status === 'ALERTA' && p._dias >= 0 && p._dias <= daysThreshold)) return false;
+    } else if (currentStatusFilter === 'VENCIDO') {
+      if (!(p._status === 'VENCIDO' && p._dias < 0)) return false;
+    } else if (currentStatusFilter === 'OK') {
+      if (p._status !== 'OK') return false;
+    } else if (!currentStatusFilter || currentStatusFilter === '') {
+      // Todos: ignora filtro de dias
+    } else {
+      if (p._status !== currentStatusFilter) return false;
+    }
     if (currentGrupo && p.GP_DESCRI !== currentGrupo) return false;
     if (currentMarca && p.MAR_DESCRI !== currentMarca) return false;
     if (tokens.length) {
@@ -253,6 +286,19 @@ function applyFilters(recalcStatus = true) {
     }
     return true;
   });
+  // Eventos para filtro personalizado
+  if (refs.customDateStart) {
+    refs.customDateStart.onchange = function(e) {
+      customDateStart = e.target.value;
+      applyFilters();
+    };
+  }
+  if (refs.customDateEnd) {
+    refs.customDateEnd.onchange = function(e) {
+      customDateEnd = e.target.value;
+      applyFilters();
+    };
+  }
   sortFiltered();
   currentPage = 1;
   render();
@@ -399,15 +445,29 @@ function renderCard(prod) {
   const card = document.createElement('div');
   card.className = `product-card status-${prod._status}`;
 
-  // Título
-  const title = document.createElement('div');
-  title.className = 'pc-title';
-  title.innerHTML = highlight(prod.PRO_NOME, currentSearch);
+  // Linha de status + validade
+  const statusValidadeRow = document.createElement('div');
+  statusValidadeRow.style.display = 'flex';
+  statusValidadeRow.style.alignItems = 'center';
+  statusValidadeRow.style.gap = '10px';
 
-  // Badge status
   const statusDiv = document.createElement('div');
   statusDiv.className = 'pc-status';
   statusDiv.innerHTML = statusBadge(prod._status, prod._dias);
+
+  const validadeRow = document.createElement('div');
+  validadeRow.className = 'pc-validade';
+  validadeRow.style.margin = '0';
+  validadeRow.appendChild(buildInlineDateDisplay(prod));
+
+  statusValidadeRow.appendChild(statusDiv);
+  statusValidadeRow.appendChild(validadeRow);
+
+  // Título
+  const title = document.createElement('div');
+  title.className = 'pc-title';
+  title.style.marginTop = '2px';
+  title.innerHTML = highlight(prod.PRO_NOME, currentSearch);
 
   // Grid de metadados
   const meta = document.createElement('div');
@@ -421,19 +481,13 @@ function renderCard(prod) {
     <span class="meta-marca"><span class="meta-label">MARCA</span>${escapeHtml(prod.MAR_DESCRI) || '-'}</span>
     <span class="meta-estoque">
       <span class="meta-label">ESTOQUE</span>
-      <span>
-        <span class="estoque-valor">${formatNum(prod.PRO_ESTOQ1)}</span>
-        <span class="estoque-unid">${escapeHtml(prod.UND_NOME)}</span>
+      <span style="display: flex; align-items: baseline; gap: 0.22em;">
+        <span class="estoque-valor">${formatNum(prod.PRO_ESTOQ1)} ${escapeHtml(prod.UND_NOME)}</span>
       </span>
     </span>
   `;
 
-  // Validade
-  const validadeRow = document.createElement('div');
-  validadeRow.className = 'pc-validade';
-  validadeRow.appendChild(buildInlineDateDisplay(prod));
-
-  card.append(title, statusDiv, meta, validadeRow);
+  card.append(statusValidadeRow, title, meta);
   return card;
 }
 
