@@ -4,12 +4,15 @@
   <meta charset="UTF-8" />
   <title>Gestão de Validades</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="icon" type="image/png" href="./img/icon-s.png" />
   <link rel="stylesheet" href="./css/styles.css" />
 </head>
 <body>
   <header class="mobile-header" id="mobile-header">
     <div style="display:flex; align-items:center; gap:8px; padding: 0 0.6rem;">
-      <button id="open-drawer" class="icon-btn hdr-btn only-mobile" aria-label="Filtros" title="Filtros">☰</button>
+      <button id="open-drawer" class="icon-btn hdr-btn only-mobile" aria-label="Filtros" title="Filtros">
+        <img src="./img/icon-s.png" alt="Abrir menu" style="width: 28px; height: 28px; display: block;" />
+      </button>
     </div>
   </header>
   <!-- Drawer / Menu Lateral de Filtros -->
@@ -91,15 +94,17 @@
 
   <!-- Cabeçalho fixo (topo em desktop/tablet, rodapé em smartphone) -->
   <header class="app-header" id="main-header">
-  <div style="display: flex; align-items: center; gap: 0.7rem; justify-content: center; width: 100%;">
-  <button id="open-drawer-desktop" class="icon-btn hdr-btn only-desktop" aria-label="Filtros" title="Filtros">☰</button>
-  <div class="search-box header-search">
-        <input id="search" type="search" placeholder="Buscar (código, nome, marca...)" autocomplete="off" aria-label="Buscar produtos" />
-        <button id="btn-voice" type="button" class="icon-btn" aria-label="Busca por voz" title="Busca por voz">🎤</button>
-        <button id="btn-camera" type="button" class="icon-btn" aria-label="Ler código de barras" title="Ler código de barras">📷</button>
-        <button id="clear-search" type="button" class="icon-btn" aria-label="Limpar busca" title="Limpar busca">×</button>
-      </div>
+  <div style="position: relative; width: 100%; min-height: 48px;">
+    <button id="open-drawer-desktop" class="icon-btn hdr-btn only-desktop" aria-label="Filtros" title="Filtros" style="position: absolute; left: 0; top: 50%; transform: translateY(-50%);">
+      <img src="./img/icon-s.png" alt="Abrir menu" style="width: 28px; height: 28px; display: block;" />
+    </button>
+    <div class="search-box header-search" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 100%; max-width: 420px;">
+      <input id="search" type="search" placeholder="Buscar (código, nome, marca...)" autocomplete="off" aria-label="Buscar produtos" />
+      <button id="btn-voice" type="button" class="icon-btn" aria-label="Busca por voz" title="Busca por voz">🎤</button>
+      <button id="btn-camera" type="button" class="icon-btn" aria-label="Ler código de barras" title="Ler código de barras">📷</button>
+      <button id="clear-search" type="button" class="icon-btn" aria-label="Limpar busca" title="Limpar busca">×</button>
     </div>
+  </div>
   </header>
 
   <main class="main-content">
