@@ -1,2 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<BorlandProject/>
+<BorlandProject>
+  <Transactions>
+    <Transaction>2025/09/19 12:16:24.268,=C:\Users\WAGNER\Documents\GitHub\projeto_horse\src\Unit1.pas</Transaction>
+    <Transaction>2025/09/19 12:16:56.223,C:\Users\WAGNER\Documents\GitHub\projeto_horse\src\uControllerUsuarios.pas=C:\Users\WAGNER\Documents\GitHub\projeto_horse\src\Unit1.pas</Transaction>
+  </Transactions>
+</BorlandProject>

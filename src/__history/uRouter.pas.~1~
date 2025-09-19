@@ -10,8 +10,7 @@ uses
   Horse,
   uControllerProdutos,
   uControllerMarcas,
-  uControllerGrupos,
-  uControllerUsuarios; // aqui é vírgula, só o último tem ponto e vírgula!
+  uControllerGrupos;
 
 procedure RegisterRoutes;
 begin
@@ -33,13 +32,7 @@ begin
     .Get('/grupos/:id', GruposGet)
     .Post('/grupos', GruposPost)
     .Put('/grupos/:id', GruposPut)
-    .Delete('/grupos/:id', GruposDelete)
-
-    .Get('/usuarios', UsuariosList)
-    .Get('/usuarios/:id', UsuariosGet)
-    .Post('/usuarios', UsuariosPost)
-    .Put('/usuarios/:id', UsuariosPut)
-    .Delete('/usuarios/:id', UsuariosDelete);
+    .Delete('/grupos/:id', GruposDelete);
 end;
 
 end.

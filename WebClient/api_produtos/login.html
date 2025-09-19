@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Login - Gestor de Validade</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="./css/styles.css" />
+  <style>
+    body {
+      background: #232a34;
+      color: #e7edf3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .login-container {
+      background: #1c2129;
+      border-radius: 14px;
+      box-shadow: 0 2px 12px 0 rgba(33,118,210,.08);
+      padding: 2.2rem 2.1rem 2rem 2.1rem;
+      max-width: 340px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.2rem;
+    }
+    .login-container img {
+      width: 54px;
+      height: 54px;
+      margin-bottom: .5rem;
+    }
+    .login-container h2 {
+      color: #2176d2;
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin: 0 0 .7rem 0;
+      letter-spacing: 1px;
+    }
+    .login-container input {
+      width: 100%;
+      padding: .7rem .9rem;
+      border-radius: 8px;
+      border: 1.5px solid #2176d2;
+      font-size: 1.05rem;
+      margin-bottom: .7rem;
+      background: #232a34;
+      color: #e7edf3;
+      outline: none;
+      transition: border-color .18s;
+    }
+    .login-container input:focus {
+      border-color: #1560a8;
+    }
+    .login-container button {
+      width: 100%;
+      padding: .7rem;
+      border-radius: 8px;
+      border: none;
+      background: #2176d2;
+      color: #fff;
+      font-size: 1.08rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .18s;
+    }
+    .login-container button:hover {
+      background: #1560a8;
+    }
+    .login-error {
+      color: #dc2626;
+      font-size: .95rem;
+      margin-bottom: .5rem;
+      text-align: center;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <form class="login-container" id="login-form">
+    <img src="./img/icon-s.png" alt="Logo" />
+    <h2>Gestor de validade</h2>
+    <input type="text" id="username" placeholder="Usuário" autocomplete="username" required />
+    <input type="password" id="password" placeholder="Senha" autocomplete="current-password" required />
+    <div class="login-error" id="login-error">Usuário ou senha inválidos!</div>
+    <button type="submit">Entrar</button>
+  </form>
+  <script>
+    document.getElementById('login-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const user = document.getElementById('username').value.trim();
+      const pass = document.getElementById('password').value.trim();
+      // Simples validação (troque por autenticação real se necessário)
+      if (user === 'admin' && pass === '1234') {
+        window.location.href = 'index.html';
+      } else {
+        document.getElementById('login-error').style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>
