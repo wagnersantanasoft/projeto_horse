@@ -260,13 +260,13 @@ function applyFilters(recalcStatus = true) {
   filtered = allProducts.filter(p => {
     // Filtro de estoque positivo
     if (estoquePositivo && Number(p.PRO_ESTOQ1) <= 0) return false;
-  // Evento para filtro de estoque positivo
-  if (refs.estoquePositivo) {
-    refs.estoquePositivo.onchange = function(e) {
-      estoquePositivo = e.target.checked;
-      applyFilters();
-    };
-  }
+    // Evento para filtro de estoque positivo
+    if (refs.estoquePositivo) {
+      refs.estoquePositivo.onchange = function(e) {
+        estoquePositivo = e.target.checked;
+        applyFilters();
+      };
+    }
     // Filtro personalizado por intervalo de datas
     if (customDateStart && customDateEnd) {
       const val = p.PRO_VALIDADE;
@@ -288,7 +288,21 @@ function applyFilters(recalcStatus = true) {
     }
     if (currentGrupo && p.GP_DESCRI !== currentGrupo) return false;
     if (currentMarca && p.MAR_DESCRI !== currentMarca) return false;
-    if (tokens.length) {
+
+    // Busca inteligente: prioriza código, mas também busca por código de barras
+    if (tokens.length === 1 && /^\d+$/.test(tokens[0])) {
+      const cod = String(p.PRO_CODIGO);
+      const barra = String(p.PRO_COD_BARRA);
+      if (tokens[0].length <= 7) {
+        // Busca prioritária por código
+        if (cod.includes(tokens[0])) return true;
+        // Se não encontrar pelo código, busca pelo código de barras
+        return barra.includes(tokens[0]);
+      } else {
+        // Para mais de 7 dígitos, busca direto pelo código de barras
+        return barra.includes(tokens[0]);
+      }
+    } else if (tokens.length) {
       const hay = [
         p.PRO_CODIGO,p.PRO_COD_BARRA,p.PRO_NOME,p.MAR_DESCRI,p.GP_DESCRI,p.UND_NOME
       ].map(v => String(v ?? '').toLowerCase());
