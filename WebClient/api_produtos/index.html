@@ -9,9 +9,13 @@
 </head>
 <body>
   <header class="mobile-header" id="mobile-header">
-    <div style="display:flex; align-items:center; gap:8px; padding: 0 0.6rem;">
+    <div style="display:flex; align-items:center; padding: 0 0.6rem; width: 100%;">
       <button id="open-drawer" class="icon-btn hdr-btn only-mobile" aria-label="Filtros" title="Filtros">
         <img src="./img/icon-s.png" alt="Abrir menu" style="width: 28px; height: 28px; display: block;" />
+      </button>
+      <div style="flex:1;"></div>
+      <button id="logout-btn-mobile" class="icon-btn hdr-btn only-mobile" style="background:var(--c-panel-alt); color:var(--c-accent); border:1px solid var(--c-accent); font-weight:600; font-size:1.05rem; border-radius:8px; padding:0.45rem 1.1rem; cursor:pointer; margin-left:auto;" onclick="window.location.href='login.html'">
+        Sair
       </button>
     </div>
   </header>
@@ -94,15 +98,24 @@
 
   <!-- Cabeçalho fixo (topo em desktop/tablet, rodapé em smartphone) -->
   <header class="app-header" id="main-header">
-  <div style="position: relative; width: 100%; min-height: 48px;">
-    <button id="open-drawer-desktop" class="icon-btn hdr-btn only-desktop" aria-label="Filtros" title="Filtros" style="position: absolute; left: 0; top: 50%; transform: translateY(-50%);">
-      <img src="./img/icon-s.png" alt="Abrir menu" style="width: 28px; height: 28px; display: block;" />
-    </button>
-    <div class="search-box header-search" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 100%; max-width: 420px;">
-      <input id="search" type="search" placeholder="Buscar (código, nome, marca...)" autocomplete="off" aria-label="Buscar produtos" />
-      <button id="btn-voice" type="button" class="icon-btn" aria-label="Busca por voz" title="Busca por voz">🎤</button>
-      <button id="btn-camera" type="button" class="icon-btn" aria-label="Ler código de barras" title="Ler código de barras">📷</button>
-      <button id="clear-search" type="button" class="icon-btn" aria-label="Limpar busca" title="Limpar busca">×</button>
+  <div style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; width: 100%; min-height: 48px;">
+    <div style="justify-self: start;">
+      <button id="open-drawer-desktop" class="icon-btn hdr-btn only-desktop" aria-label="Filtros" title="Filtros">
+        <img src="./img/icon-s.png" alt="Abrir menu" style="width: 28px; height: 28px; display: block;" />
+      </button>
+    </div>
+    <div style="justify-self: center;">
+      <div class="search-box header-search" style="width: 100%; max-width: 780px; display: flex; justify-content: center;">
+        <input id="search" type="search" placeholder="Buscar (código, nome, marca...)" autocomplete="off" aria-label="Buscar produtos" />
+        <button id="btn-voice" type="button" class="icon-btn" aria-label="Busca por voz" title="Busca por voz">🎤</button>
+        <button id="btn-camera" type="button" class="icon-btn" aria-label="Ler código de barras" title="Ler código de barras">📷</button>
+        <button id="clear-search" type="button" class="icon-btn" aria-label="Limpar busca" title="Limpar busca">×</button>
+      </div>
+    </div>
+    <div style="justify-self: end;">
+      <button id="logout-btn-desktop" class="icon-btn hdr-btn only-desktop" style="background:var(--c-panel-alt); color:var(--c-accent); border:1px solid var(--c-accent); font-weight:600; font-size:1.05rem; border-radius:8px; padding:0.45rem 1.1rem; cursor:pointer;" onclick="window.location.href='login.html'">
+        Sair
+      </button>
     </div>
   </div>
   </header>

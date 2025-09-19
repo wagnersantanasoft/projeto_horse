@@ -11,6 +11,7 @@ uses
   uControllerProdutos,
   uControllerMarcas,
   uControllerGrupos;
+  uControllerUsuarios;
 
 procedure RegisterRoutes;
 begin
@@ -33,6 +34,12 @@ begin
     .Post('/grupos', GruposPost)
     .Put('/grupos/:id', GruposPut)
     .Delete('/grupos/:id', GruposDelete);
+
+    .Get('/usuarios', UsuariosList)
+    .Get('/usuarios/:id', UsuariosGet)
+    .Post('/usuarios', UsuariosPost)
+    .Put('/usuarios/:id', UsuariosPut)
+    .Delete('/usuarios/:id', UsuariosDelete);
 end;
 
 end.
