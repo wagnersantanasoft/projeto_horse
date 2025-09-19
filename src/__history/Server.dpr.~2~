@@ -9,8 +9,7 @@ uses
   uRouter in 'uRouter.pas',
   uControllerProdutos in 'uControllerProdutos.pas',
   uControllerMarcas in 'uControllerMarcas.pas',
-  uControllerGrupos in 'uControllerGrupos.pas',
-  uControllerUsuarios in 'uControllerUsuarios.pas';
+  uControllerGrupos in 'uControllerGrupos.pas';
 
 begin
   ReportMemoryLeaksOnShutdown := DebugHook <> 0;
