@@ -72,6 +72,8 @@ function loadState() {
     groupBy = s.groupBy ?? '';
     sortField = s.sortField ?? '';
     sortDir = s.sortDir ?? 'asc';
+      // if no saved sortField, prefer status-priority
+      if (!sortField) sortField = '_status';
     // tema preferido do usuário
     const themePref = s.theme || loadTheme();
     document.documentElement.setAttribute('data-theme', themePref);
@@ -171,6 +173,7 @@ function initFontSizeControl() {
   // Mobile controls
   refs.mobileControls = document.getElementById('mobile-controls');
   refs.openDrawer = document.getElementById('open-drawer');
+  refs.orderByBtnMobile = document.getElementById('order-by-btn-mobile');
   refs.daysThreshold = document.getElementById('days-threshold');
   refs.reloadBtn = document.getElementById('reload-btn');
   refs.themeToggle = document.getElementById('theme-toggle');
@@ -196,11 +199,73 @@ function initFontSizeControl() {
   refs.pagination = document.getElementById('pagination');
   refs.btnVoice = document.getElementById('btn-voice');
   refs.btnCamera = document.getElementById('btn-camera');
+  refs.orderByBtn = document.getElementById('order-by-btn');
   refs.cameraOverlay = document.getElementById('camera-overlay');
   refs.cameraVideo = document.getElementById('camera-video');
   refs.cameraStatus = document.getElementById('camera-status');
   refs.closeCamera = document.getElementById('close-camera');
   refs.table = document.getElementById('product-table');
+}
+
+// ORDER BY cycling support
+const ORDER_OPTIONS = [
+  { field: '_status', label: 'Status' },
+  { field: 'PRO_NOME', label: 'Nome' },
+  { field: 'PRO_VALIDADE', label: 'Validade' },
+  { field: 'MAR_DESCRI', label: 'Marca' },
+  { field: 'GP_DESCRI', label: 'Grupo' },
+  { field: 'PRO_ESTOQ1', label: 'Estoque' },
+  { field: 'PRO_PRECO1', label: 'Preço' }
+];
+
+function applySortInMemory() {
+  if (!sortField) return;
+  const f = sortField;
+  const dir = sortDir === 'asc' ? 1 : -1;
+  filtered.sort((a,b) => {
+    const va = (a[f] === undefined || a[f] === null) ? '' : a[f];
+    const vb = (b[f] === undefined || b[f] === null) ? '' : b[f];
+    if (va === vb) return 0;
+    if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * dir;
+    return String(va).localeCompare(String(vb), 'pt-BR', { numeric: true }) * dir;
+  });
+}
+
+function setOrder(field, dir = 'asc') {
+  sortField = field;
+  sortDir = dir;
+  saveState();
+  applySortInMemory();
+  currentPage = 1;
+  renderCurrent();
+  updateOrderBtnLabel();
+  // brief toast to indicate change
+  setFeedback(`Ordenado por ${field} ${dir === 'asc' ? '↑' : '↓'}`);
+  setTimeout(() => { setFeedback(''); }, 1500);
+}
+
+function cycleOrder() {
+  const idx = ORDER_OPTIONS.findIndex(o => o.field === sortField);
+  let next = 0;
+  if (idx === -1) next = 0;
+  else next = (idx + 1) % ORDER_OPTIONS.length;
+  // if same field, toggle dir
+  if (ORDER_OPTIONS[next].field === sortField) {
+    sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  }
+  setOrder(ORDER_OPTIONS[next].field, sortDir);
+}
+
+function updateOrderBtnLabel() {
+  if (!refs.orderByBtn) return;
+  const opt = ORDER_OPTIONS.find(o => o.field === sortField);
+  const label = opt ? opt.label : 'Ordenar';
+  const arrow = sortDir === 'asc' ? '↑' : '↓';
+  refs.orderByBtn.textContent = label + ' ' + arrow;
+  if (refs.orderByBtnMobile) {
+    // mobile: show just arrow to save space
+    refs.orderByBtnMobile.textContent = arrow;
+  }
 }
 
 function setFeedback(msg, type='') {
@@ -672,13 +737,31 @@ function bindEvents() {
   // Shared
   refs.closeDrawer.addEventListener('click', closeDrawer);
   refs.drawerBackdrop.addEventListener('click', closeDrawer);
-  refs.applyFiltersBtn.addEventListener('click', () => {
+  refs.applyFiltersBtn?.addEventListener('click', () => {
+    // legacy: button removed in markup; keep compatibility if present
     currentStatusFilter = refs.statusFilter.value;
     currentGrupo = refs.filterGrupo.value;
     currentMarca = refs.filterMarca.value;
     groupBy = refs.groupBy.value;
     applyFilters();
     closeDrawer();
+  });
+  // Apply immediately when filters change (no need for an Apply button)
+  refs.statusFilter?.addEventListener('change', () => {
+    currentStatusFilter = refs.statusFilter.value;
+    applyFilters();
+  });
+  refs.filterGrupo?.addEventListener('change', () => {
+    currentGrupo = refs.filterGrupo.value;
+    applyFilters();
+  });
+  refs.filterMarca?.addEventListener('change', () => {
+    currentMarca = refs.filterMarca.value;
+    applyFilters();
+  });
+  refs.groupBy?.addEventListener('change', () => {
+    groupBy = refs.groupBy.value;
+    applyFilters();
   });
   refs.clearSearch.addEventListener('click', () => {
     refs.search.value = '';
@@ -702,6 +785,29 @@ function bindEvents() {
     onResult: (val) => {
       currentSearch = val.trim();
       applyFilters(false);
+    }
+  });
+  // order-by button cycles through predefined options; Shift+click toggles direction
+  refs.orderByBtn?.addEventListener('click', (e) => {
+    if (e.shiftKey) {
+      sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+      saveState();
+      applySortInMemory();
+      renderCurrent();
+      updateOrderBtnLabel();
+    } else {
+      cycleOrder();
+    }
+  });
+  refs.orderByBtnMobile?.addEventListener('click', (e) => {
+    if (e.shiftKey) {
+      sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+      saveState();
+      applySortInMemory();
+      renderCurrent();
+      updateOrderBtnLabel();
+    } else {
+      cycleOrder();
     }
   });
 
@@ -782,6 +888,8 @@ function syncInputsFromState() {
 function init() {
   document.documentElement.setAttribute('data-theme', loadTheme());
   loadState();
+  // update order button to reflect persisted state
+  updateOrderBtnLabel();
   window.__USER_INTERACTED__ = false;
   window.addEventListener('pointerdown', () => { window.__USER_INTERACTED__ = true; }, { once: true });
   window.addEventListener('keydown', () => { window.__USER_INTERACTED__ = true; }, { once: true });

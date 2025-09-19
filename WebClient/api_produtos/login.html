@@ -5,69 +5,147 @@
   <title>Login - Gestor de Validade</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <link rel="stylesheet" href="./css/styles.css" />
+  <!-- Fonte para o título -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
   <style>
+    html, body { height: 100%; }
     body {
-      background: #232a34;
+      /* deeper, richer base with subtle motion */
+      background: radial-gradient(1200px 600px at 10% 20%, rgba(59,130,246,0.08), transparent 15%),
+                  radial-gradient(900px 500px at 85% 80%, rgba(124,58,237,0.07), transparent 12%),
+                  linear-gradient(180deg,#071025 0%, #0f1724 45%, #111827 100%);
       color: #e7edf3;
       display: flex;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
+      height: 100vh; /* garantir 100% do viewport */
       margin: 0;
+      position: relative;
+      overflow: hidden; /* manter sem rolagem e card fixo */
+      background-size: cover; /* garantir cobertura total */
+    }
+    /* stylish radial gradient layers behind the card */
+    /* soft animated light blobs placed behind the card */
+    body::before,
+    body::after {
+      content: '';
+      position: absolute;
+      inset: -30% -15% -30% -15%;
+      z-index: 0;
+      pointer-events: none;
+      background-repeat: no-repeat;
+      background-size: cover;
+      opacity: 0.10;
+      filter: blur(36px);
+      transform: translateZ(0);
+    }
+    body::before {
+      background-image: radial-gradient(circle at 18% 22%, rgba(59,130,246,0.9) 0%, rgba(59,130,246,0.12) 12%, transparent 34%),
+                        radial-gradient(circle at 82% 72%, rgba(124,58,237,0.85) 0%, rgba(124,58,237,0.10) 10%, transparent 30%);
+      animation: floatSlow 20s linear infinite alternate;
+    }
+    body::after {
+      background-image: radial-gradient(circle at 50% 8%, rgba(6,182,212,0.85) 0%, rgba(6,182,212,0.08) 10%, transparent 28%),
+                        radial-gradient(circle at 10% 82%, rgba(239,68,68,0.85) 0%, rgba(239,68,68,0.06) 10%, transparent 26%);
+      animation: floatSlow 28s linear infinite alternate-reverse;
+    }
+
+    @keyframes floatSlow {
+      from { transform: translateY(-6%) scale(0.99); }
+      to   { transform: translateY(6%) scale(1.03); }
+    }
+    @keyframes cardEntry {
+      from { opacity: 0; transform: translate(-50%, -50%) scale(.96); }
+      to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
     }
     .login-container {
-      background: #1c2129;
-      border-radius: 14px;
-      box-shadow: 0 2px 12px 0 rgba(33,118,210,.08);
-      padding: 2.2rem 2.1rem 2rem 2.1rem;
+      background: rgba(255,255,255,0.03);
+      border-radius: 12px;
+      box-shadow: 0 8px 30px rgba(2,6,23,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
+      padding: 1.8rem 1.6rem 1.6rem 1.6rem;
       max-width: 340px;
       width: 100%;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 1.2rem;
+      gap: 0.9rem;
+      /* fixo e centralizado acima do fundo animado */
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 9999;
+      backdrop-filter: blur(6px);
+      animation: cardEntry 360ms ease-out both;
     }
+    /* login sizing helpers */
+  :root { --login-width: 220px; --accent-color: #3b82f6; }
+    .login-container { align-items: center; }
+    .login-container input,
+    .login-container button {
+      max-width: var(--login-width);
+      width: 100%;
+    }
+    @media (max-width: 420px) {
+      :root { --login-width: calc(100% - 64px); }
+      /* manter o card fixo, mas reduzir dimensões para caber em telas pequenas */
+      .login-container { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); margin: 0 8px; padding: 0.6rem 0.9rem; animation: none; width: calc(100% - 32px); max-width: 320px; gap: 0.6rem; }
+      .login-container img { max-width: 120px; max-height: 64px; }
+      .login-container h2 { font-size: 1.0rem; }
+      .login-container input { padding: .34rem .5rem; font-size: .9rem; border-radius: 6px; }
+      .login-container button { padding: .44rem .5rem; font-size: .95rem; border-radius: 6px; }
+    }
+    /* sem deslocamento do card ao focar inputs */
     .login-container img {
-      width: 54px;
-      height: 54px;
-      margin-bottom: .5rem;
+      width: auto;
+      height: auto;
+      max-width: 180px; /* não aumentar além do card */
+      max-height: 100px; /* limita para não quebrar layout */
+      margin-bottom: .25rem;
+      border-radius: 0; /* manter formato original */
+      box-shadow: none; /* sem sombra */
+      object-fit: contain;
     }
     .login-container h2 {
-      color: #2176d2;
-      font-size: 1.35rem;
+      color: #e6eef9;
+      font-size: 1.5rem;
       font-weight: 700;
-      margin: 0 0 .7rem 0;
-      letter-spacing: 1px;
+      margin: 0 0 .35rem 0;
+      letter-spacing: .6px;
+      font-family: 'Montserrat', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      text-shadow: 0 2px 6px rgba(6,11,30,0.55);
     }
     .login-container input {
       width: 100%;
-      padding: .7rem .9rem;
-      border-radius: 8px;
-      border: 1.5px solid #2176d2;
-      font-size: 1.05rem;
-      margin-bottom: .7rem;
+      padding: .42rem .6rem; /* menor padding */
+      border-radius: 6px;
+      border: 1.2px solid #2176d2;
+      font-size: 0.95rem; /* fonte um pouco menor */
+      margin-bottom: .5rem;
       background: #232a34;
       color: #e7edf3;
       outline: none;
-      transition: border-color .18s;
+      transition: border-color .12s;
     }
     .login-container input:focus {
       border-color: #1560a8;
     }
     .login-container button {
       width: 100%;
-      padding: .7rem;
-      border-radius: 8px;
+      padding: .48rem; /* botão menor */
+      border-radius: 6px;
       border: none;
-      background: #2176d2;
+      background: var(--accent-color); /* cor ajustável */
       color: #fff;
-      font-size: 1.08rem;
+      font-size: 0.96rem; /* fonte reduzida */
       font-weight: 600;
       cursor: pointer;
-      transition: background .18s;
+      transition: background .12s, transform .06s;
     }
     .login-container button:hover {
-      background: #1560a8;
+      background: #1e4fc7;
+      transform: translateY(-1px);
     }
     .login-error {
       color: #dc2626;
@@ -76,29 +154,170 @@
       text-align: center;
       display: none;
     }
+    .login-subtle {
+      font-size: .82rem;
+      color: rgba(230,238,249,0.65);
+      margin-top: 0.6rem;
+      text-align: center;
+      opacity: 0.9;
+      user-select: none;
+    }
+    /* Light theme overrides (when the app sets data-theme='light') */
+    :root[data-theme='light'] body {
+      background: linear-gradient(180deg,#f7fafc 0%, #e6eef9 60%);
+      color: #10203a;
+    }
+    :root[data-theme='light'] .login-container {
+      background: rgba(255,255,255,0.9);
+      box-shadow: 0 8px 30px rgba(2,6,23,0.06), inset 0 1px 0 rgba(0,0,0,0.02);
+    }
+    :root[data-theme='light'] .login-container input {
+      background: #fff;
+      color: #10203a;
+      border: 1px solid #cbd5e1;
+    }
+    :root[data-theme='light'] .login-container button {
+      background: var(--accent-color);
+      color: #fff;
+    }
+    :root[data-theme='light'] .login-subtle {
+      color: rgba(16,32,58,0.6);
+    }
+    /* transição suave ao trocar tema no login */
+    .login-container, .login-container input, .login-container button {
+      transition: background-color .18s ease, color .18s ease, border-color .18s ease, box-shadow .18s ease;
+    }
+    /* Ajustes mobile específicos para tema claro */
+    @media (max-width: 420px) {
+      :root[data-theme='light'] body {
+        background: linear-gradient(180deg,#fbfdff 0%, #f1f5f9 60%);
+        color: #0b2540;
+      }
+      :root[data-theme='light'] body::before,
+      :root[data-theme='light'] body::after {
+        opacity: 0.06;
+        filter: blur(30px);
+      }
+      :root[data-theme='light'] .login-container {
+        background: #ffffff;
+        border: 1px solid #e6eef9;
+        box-shadow: 0 8px 24px rgba(16,24,40,0.06);
+        padding: 0.7rem 0.9rem;
+        gap: 0.5rem;
+      }
+      :root[data-theme='light'] .login-container h2 {
+        color: #07223f;
+        font-size: 1.05rem;
+        text-shadow: none;
+      }
+      :root[data-theme='light'] .login-container input {
+        background: #fff;
+        color: #0b2540;
+        border: 1px solid #cbd5e1;
+      }
+      :root[data-theme='light'] .login-container button {
+        background: #2563eb;
+        color: #fff;
+      }
+      :root[data-theme='light'] .login-subtle { color: rgba(11,34,64,0.65); }
+    }
   </style>
 </head>
-<body>
+<body class="login-fullscreen">
+  <script>
+    // Aplica o tema salvo pela aplicação principal (usa mesmo storage prefix 'cv_')
+    (function(){
+      try {
+        const key = 'cv_theme';
+        const t = localStorage.getItem(key);
+        if (t) document.documentElement.setAttribute('data-theme', t);
+      } catch(e){}
+    })();
+  </script>
   <form class="login-container" id="login-form">
-    <img src="./img/icon-s.png" alt="Logo" />
-    <h2>Gestor de validade</h2>
+    <img src="./img/logo.png" alt="Logo" />
+  <!-- título principal removido conforme solicitado -->
     <input type="text" id="username" placeholder="Usuário" autocomplete="username" required />
     <input type="password" id="password" placeholder="Senha" autocomplete="current-password" required />
     <div class="login-error" id="login-error">Usuário ou senha inválidos!</div>
     <button type="submit">Entrar</button>
+    <div class="login-subtle">Gestor de validade</div>
   </form>
-  <script>
-    document.getElementById('login-form').addEventListener('submit', function(e) {
+  <script type="module">
+    import { usersService } from './js/usersService.js';
+
+    const form = document.getElementById('login-form');
+    const errEl = document.getElementById('login-error');
+
+    form.addEventListener('submit', async function(e) {
       e.preventDefault();
+      errEl.style.display = 'none';
       const user = document.getElementById('username').value.trim();
       const pass = document.getElementById('password').value.trim();
-      // Simples validação (troque por autenticação real se necessário)
-      if (user === 'admin' && pass === '1234') {
-        window.location.href = 'index.html';
-      } else {
-        document.getElementById('login-error').style.display = 'block';
+      try {
+        const list = await usersService.listAll();
+  // tenta encontrar por código ou login
+  const found = list.find(u => String(u.USE_CODIGO) === user || (u.USE_LOGIN && u.USE_LOGIN.toLowerCase() === user.toLowerCase()));
+        if (!found) {
+          errEl.textContent = 'Usuário não encontrado.';
+          errEl.style.display = 'block';
+          return;
+        }
+        // ATENÇÃO: comparação simples de senha (dependendo da API, pode ser hash)
+        if (String(found.USE_SENHA) === pass) {
+          // sucesso: salvar sessão mínima
+          localStorage.setItem('app_user', JSON.stringify({ USE_CODIGO: found.USE_CODIGO, USE_LOGIN: found.USE_LOGIN }));
+          window.location.href = 'index.html';
+        } else {
+          errEl.textContent = 'Senha inválida.';
+          errEl.style.display = 'block';
+        }
+      } catch (err) {
+        console.error('Erro ao validar login:', err);
+        errEl.textContent = 'Erro ao conectar com o servidor.';
+        errEl.style.display = 'block';
       }
     });
+
+    // Garantir foco no input username sem deslocar o card (preventScroll quando disponível)
+    (function(){
+      const u = document.getElementById('username');
+      try {
+        if (u) {
+          // timeout curto para esperar a pintura inicial
+          setTimeout(() => {
+            if (typeof u.focus === 'function') {
+              try { u.focus({ preventScroll: true }); }
+              catch(e) { u.focus(); }
+            }
+          }, 120);
+        }
+      } catch(e){}
+    })();
+
+    // Fallback para alguns WebViews/ navegadores móveis que reposicionam fixed ao abrir teclado
+    (function(){
+      const inputs = Array.from(document.querySelectorAll('.login-container input'));
+      if (!inputs.length) return;
+      let originalHtmlHeight = '';
+      function onFocus() {
+        try {
+          // fixa a altura do root para o valor atual da janela (evita resize da viewport)
+          originalHtmlHeight = document.documentElement.style.height || '';
+          document.documentElement.style.height = window.innerHeight + 'px';
+        } catch(e){}
+      }
+      function onBlur(){
+        try {
+          document.documentElement.style.height = originalHtmlHeight;
+        } catch(e){}
+      }
+      inputs.forEach(i => {
+        i.addEventListener('focus', onFocus, { passive: true });
+        i.addEventListener('blur', onBlur, { passive: true });
+      });
+    })();
+
   </script>
 </body>
 </html>

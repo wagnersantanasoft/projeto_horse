@@ -14,6 +14,7 @@
         <img src="./img/icon-s.png" alt="Abrir menu" style="width: 28px; height: 28px; display: block;" />
       </button>
       <div style="flex:1;"></div>
+      <button id="order-by-btn-mobile" class="icon-btn only-mobile" aria-label="Ordenar (clique para próximo; Shift+click inverte direção)" title="Ordenar (clique para próximo; Shift+click inverte direção)" style="margin-right:8px;">⇅</button>
       <button id="logout-btn-mobile" class="icon-btn hdr-btn only-mobile" style="background:var(--c-panel-alt); color:var(--c-accent); border:1px solid var(--c-accent); font-weight:600; font-size:1.05rem; border-radius:8px; padding:0.45rem 1.1rem; cursor:pointer; margin-left:auto;" onclick="window.location.href='login.html'">
         Sair
       </button>
@@ -69,6 +70,12 @@
         <span class="badge status-vencido">Vencido</span>
       </div>
       <div class="drawer-group">
+        <label for="days-threshold">Dias para alerta (próx. vencer)</label>
+        <input type="number" id="days-threshold" min="1" max="365" value="15" />
+        <small style="display:block; margin-top:6px; color:var(--c-muted);">Defina em quantos dias um produto entra em alerta antes da validade.</small>
+      </div>
+      
+      <div class="drawer-group">
         <div style="display: flex; align-items: center; gap: 16px;">
           <label for="estoque-positivo" style="margin-right: 10px;">Positivo</label>
           <label class="switch">
@@ -87,9 +94,7 @@
         </div>
         <span id="progress-value" style="display: block; text-align: right; font-size: 0.95em; margin-top: 2px; color: #333;">2'0%</span>
       </div>
-      <div class="drawer-group" style="margin-bottom: 0;">
-        <button id="apply-filters" type="button" class="drawer-apply">Aplicar</button>
-      </div>
+      
     </div>
   </aside>
   <div id="drawer-backdrop" class="drawer-backdrop" hidden></div>
@@ -106,13 +111,14 @@
     </div>
     <div style="justify-self: center;">
       <div class="search-box header-search" style="width: 100%; max-width: 780px; display: flex; justify-content: center;">
-        <input id="search" type="search" placeholder="Buscar (código, nome, marca...)" autocomplete="off" aria-label="Buscar produtos" />
-        <button id="btn-voice" type="button" class="icon-btn" aria-label="Busca por voz" title="Busca por voz">🎤</button>
+  <input id="search" type="search" placeholder="Buscar (código, nome, marca...)" autocomplete="off" aria-label="Buscar produtos" />
+  <button id="btn-voice" type="button" class="icon-btn" aria-label="Busca por voz" title="Busca por voz">🎤</button>
         <button id="btn-camera" type="button" class="icon-btn" aria-label="Ler código de barras" title="Ler código de barras">📷</button>
         <button id="clear-search" type="button" class="icon-btn" aria-label="Limpar busca" title="Limpar busca">×</button>
       </div>
     </div>
-    <div style="justify-self: end;">
+    <div style="justify-self: end; display:flex; gap:8px; align-items:center;">
+  <button id="order-by-btn" type="button" class="icon-btn only-desktop" aria-label="Ordenar (clique para próximo; Shift+click inverte direção)" title="Ordenar (clique para próximo; Shift+click inverte direção)">⇅</button>
       <button id="logout-btn-desktop" class="icon-btn hdr-btn only-desktop" style="background:var(--c-panel-alt); color:var(--c-accent); border:1px solid var(--c-accent); font-weight:600; font-size:1.05rem; border-radius:8px; padding:0.45rem 1.1rem; cursor:pointer;" onclick="window.location.href='login.html'">
         Sair
       </button>

@@ -1,6 +1,23 @@
 /* Controle de exibição dos botões de abrir aside */
 .only-mobile { display: none !important; }
 .only-desktop { display: inline-flex !important; }
+/* específicas para a página de login: quando .login-container está presente
+   reduz o card no mobile e garante que o background cubra 100vh */
+html.login-fullscreen, body.login-fullscreen {
+  height: 100%;
+  min-height: 100vh;
+}
+@media (max-width: 480px) {
+  /* força o background a cobrir e reduz inputs quando login presente */
+  .login-container { width: calc(100% - 28px) !important; max-width: 320px !important; padding: 0.6rem 0.9rem !important; }
+  .login-container input { font-size: .92rem !important; padding: .34rem .5rem !important; }
+  .login-container button { font-size: .94rem !important; padding: .44rem .5rem !important; }
+  html, body { height: 100vh !important; overflow: hidden !important; }
+  /* tornar o conteúdo principal interno rolável (sem barra do navegador) */
+  .main-content { height: calc(100vh - var(--header-mobile-height, 58px)); overflow: auto; -webkit-overflow-scrolling: touch; }
+  /* backdrop/drawer devem ocupar full viewport e permitir scroll interno se necessário */
+  .drawer-content { max-height: calc(100vh - 80px); overflow: auto; -webkit-overflow-scrolling: touch; }
+}
 @media (max-width: 760px) {
   .only-mobile { display: inline-flex !important; }
   .only-desktop { display: none !important; }
@@ -195,7 +212,10 @@ body.font-size-large { font-size: var(--font-size-large); }
 html, body {
   margin: 0;
   font-family: system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,sans-serif;
-  background: linear-gradient(135deg,var(--c-bg),var(--c-panel-alt));
+  /* richer base with subtle radial accents for depth */
+  background: radial-gradient(900px 500px at 10% 20%, rgba(59,130,246,0.04), transparent 12%),
+              radial-gradient(700px 420px at 85% 80%, rgba(124,58,237,0.03), transparent 10%),
+              linear-gradient(135deg,var(--c-bg),var(--c-panel-alt));
   color: var(--c-text);
   min-height: 100vh;
 }
@@ -326,6 +346,8 @@ h1 {
     margin-left: 0;
     margin-right: 0;
   }
+  /* garantir que o conteúdo principal não fique escondido sob o header fixo em mobile */
+  .main-content { padding-top: calc(var(--header-mobile-height, 58px) + 8px); }
 }
 
 .hdr-btn {
