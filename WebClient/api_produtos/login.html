@@ -63,7 +63,7 @@
       background: rgba(255,255,255,0.03);
       border-radius: 12px;
       box-shadow: 0 8px 30px rgba(2,6,23,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
-      padding: 1.8rem 1.6rem 1.6rem 1.6rem;
+      padding: 2.8rem 1.6rem 1.6rem 1.6rem;
       max-width: 340px;
       width: 100%;
       display: flex;
@@ -100,9 +100,9 @@
     .login-container img {
       width: auto;
       height: auto;
-      max-width: 180px; /* não aumentar além do card */
+      max-width: 220px; /* não aumentar além do card */
       max-height: 100px; /* limita para não quebrar layout */
-      margin-bottom: .25rem;
+      margin-bottom: 2rem;
       border-radius: 0; /* manter formato original */
       box-shadow: none; /* sem sombra */
       object-fit: contain;
@@ -265,8 +265,10 @@
         }
         // ATENÇÃO: comparação simples de senha (dependendo da API, pode ser hash)
         if (String(found.USE_SENHA) === pass) {
-          // sucesso: salvar sessão mínima
+          // sucesso: salvar sessão mínima com timestamp
           localStorage.setItem('app_user', JSON.stringify({ USE_CODIGO: found.USE_CODIGO, USE_LOGIN: found.USE_LOGIN }));
+          localStorage.setItem('app_session_timestamp', Date.now().toString());
+          console.log('Login bem-sucedido, sessão iniciada');
           window.location.href = 'index.html';
         } else {
           errEl.textContent = 'Senha inválida.';

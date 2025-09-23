@@ -14,13 +14,11 @@ let allProducts = [];
 let filtered = [];
 let currentPage = 1;
 let currentSearch = '';
-let daysThreshold = 15;
-let currentStatusFilter = '';
+let daysThreshold = 30;
+let currentStatusFilter = 'ALERTA';
 let currentGrupo = '';
 let currentMarca = '';
 let estoquePositivo = false;
-let customDateStart = '';
-let customDateEnd = '';
 let groupBy = '';
 let sortField = '';
 let sortDir = 'asc';
@@ -29,6 +27,140 @@ let loading = false;
 const refs = {};
 function qs(id) { return document.getElementById(id); }
 function storageKey(k){ return CONFIG.STORAGE_PREFIX + k; }
+
+// AUTENTICAÇÃO: funções para verificar e gerenciar login
+const SESSION_TIMEOUT = 15 * 60 * 1000; // 15 minutos em millisegundos
+let sessionTimer = null;
+let lastActivity = Date.now();
+
+function getCurrentUser() {
+  try {
+    const userSession = localStorage.getItem('app_user');
+    if (!userSession) return null;
+    return JSON.parse(userSession);
+  } catch (error) {
+    console.warn('Erro ao obter usuário atual:', error);
+    return null;
+  }
+}
+
+function getSessionTimestamp() {
+  try {
+    const timestamp = localStorage.getItem('app_session_timestamp');
+    return timestamp ? parseInt(timestamp) : null;
+  } catch (error) {
+    console.warn('Erro ao obter timestamp da sessão:', error);
+    return null;
+  }
+}
+
+function updateSessionTimestamp() {
+  try {
+    localStorage.setItem('app_session_timestamp', Date.now().toString());
+    lastActivity = Date.now();
+  } catch (error) {
+    console.warn('Erro ao atualizar timestamp da sessão:', error);
+  }
+}
+
+function isSessionExpired() {
+  const timestamp = getSessionTimestamp();
+  if (!timestamp) return true;
+  
+  const timeDiff = Date.now() - timestamp;
+  return timeDiff > SESSION_TIMEOUT;
+}
+
+function isUserLoggedIn() {
+  const user = getCurrentUser();
+  const hasValidUser = user && (user.USE_CODIGO || user.USE_LOGIN);
+  const sessionValid = !isSessionExpired();
+  
+  if (hasValidUser && !sessionValid) {
+    console.log('Sessão expirada, fazendo logout automático...');
+    logout();
+    return false;
+  }
+  
+  return hasValidUser && sessionValid;
+}
+
+function startSessionTimer() {
+  // Limpar timer anterior se existir
+  if (sessionTimer) {
+    clearTimeout(sessionTimer);
+  }
+  
+  // Criar novo timer
+  sessionTimer = setTimeout(() => {
+    console.log('Sessão expirou por inatividade (15 minutos)');
+    logout();
+  }, SESSION_TIMEOUT);
+}
+
+function resetSessionTimer() {
+  updateSessionTimestamp();
+  startSessionTimer();
+}
+
+function setupActivityDetection() {
+  // Eventos que indicam atividade do usuário
+  const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+  
+  events.forEach(event => {
+    document.addEventListener(event, () => {
+      const now = Date.now();
+      // Só resetar se passou mais de 30 segundos desde a última atividade
+      if (now - lastActivity > 30000) {
+        console.log('Atividade detectada, resetando timer de sessão');
+        resetSessionTimer();
+      }
+    }, true);
+  });
+}
+
+function logout() {
+  try {
+    // Limpar timer
+    if (sessionTimer) {
+      clearTimeout(sessionTimer);
+      sessionTimer = null;
+    }
+    
+    // Limpar dados de sessão
+    localStorage.removeItem('app_user');
+    localStorage.removeItem('app_session_timestamp');
+    
+    console.log('Usuário deslogado');
+    window.location.href = 'login.html';
+  } catch (error) {
+    console.error('Erro ao fazer logout:', error);
+    window.location.href = 'login.html';
+  }
+}
+
+function initializeSession() {
+  // Verificar se a sessão ainda é válida
+  if (!isUserLoggedIn()) {
+    return false;
+  }
+  
+  // Atualizar timestamp e iniciar timer
+  updateSessionTimestamp();
+  startSessionTimer();
+  setupActivityDetection();
+  
+  // Verificação periódica a cada 30 segundos para maior segurança
+  setInterval(() => {
+    if (!isUserLoggedIn()) {
+      console.log('Verificação periódica: sessão inválida detectada');
+      logout();
+    }
+  }, 30000);
+  
+  console.log('Sessão inicializada com timeout de 15 minutos');
+  return true;
+}
 
 // TEMA: alternância automática por horário, mas sempre pode ser ajustado manualmente
 function getDefaultTheme() {
@@ -62,11 +194,26 @@ function saveState() {
 function loadState() {
   try {
     const raw = localStorage.getItem(storageKey('prefs'));
-    if (!raw) return;
+    console.log('localStorage raw:', raw);
+    
+    if (!raw) {
+      // Se não há dados salvos, usar valores padrão
+      console.log('Nenhum estado salvo encontrado, usando valores padrão');
+      console.log('Valores padrão aplicados: Status =', currentStatusFilter, ', Dias =', daysThreshold);
+      return;
+    }
+    
     const s = JSON.parse(raw);
+    console.log('Estado carregado do localStorage:', s);
+    
     currentSearch = s.search ?? '';
-    currentStatusFilter = s.status ?? '';
-    daysThreshold = s.days ?? 15;
+    
+    // Garantir que sempre use valores padrão se não houver dados válidos salvos
+    currentStatusFilter = s.status && s.status !== '' ? s.status : 'ALERTA';
+    daysThreshold = s.days && s.days > 0 ? s.days : 30;
+    
+    console.log('Valores após loadState: Status =', currentStatusFilter, ', Dias =', daysThreshold);
+    
     currentGrupo = s.grupo ?? '';
     currentMarca = s.marca ?? '';
     groupBy = s.groupBy ?? '';
@@ -82,18 +229,6 @@ function loadState() {
 
 function initRefs() {
   refs.estoquePositivo = document.getElementById('estoque-positivo');
-  refs.customDateStart = document.getElementById('custom-date-start');
-  refs.customDateEnd = document.getElementById('custom-date-end');
-  // Define datas padrão ao abrir (após garantir que os elementos existem)
-  if (refs.customDateStart && refs.customDateEnd) {
-    const hoje = new Date();
-    const padStart = hoje.toISOString().slice(0,10);
-    const padEnd = new Date(hoje.getTime() + 30*24*60*60*1000).toISOString().slice(0,10);
-    refs.customDateStart.value = padStart;
-    refs.customDateEnd.value = padEnd;
-    customDateStart = padStart;
-    customDateEnd = padEnd;
-  }
   // Progresso para fonte
   refs.progressBar = document.getElementById('progress-bar');
   refs.progressValue = document.getElementById('progress-value');
@@ -177,11 +312,13 @@ function initFontSizeControl() {
   refs.daysThreshold = document.getElementById('days-threshold');
   refs.reloadBtn = document.getElementById('reload-btn');
   refs.themeToggle = document.getElementById('theme-toggle');
+  refs.logoutBtnMobile = document.getElementById('logout-btn-mobile');
   // Desktop controls
   refs.openDrawerDesktop = document.getElementById('open-drawer-desktop');
   refs.daysThresholdDesktop = document.getElementById('days-threshold-desktop');
   refs.reloadBtnDesktop = document.getElementById('reload-btn-desktop');
   refs.themeToggleDesktop = document.getElementById('theme-toggle-desktop');
+  refs.logoutBtnDesktop = document.getElementById('logout-btn-desktop');
   // Shared
   refs.tbody = document.getElementById('product-tbody');
   refs.cardsContainer = document.getElementById('cards-container');
@@ -332,13 +469,6 @@ function applyFilters(recalcStatus = true) {
         applyFilters();
       };
     }
-    // Filtro personalizado por intervalo de datas
-    if (customDateStart && customDateEnd) {
-      const val = p.PRO_VALIDADE;
-      if (!val) return false;
-      const valIso = brToIso(val);
-      if (valIso < customDateStart || valIso > customDateEnd) return false;
-    }
     // Filtro por status
     if (currentStatusFilter === 'ALERTA') {
       if (!(p._status === 'ALERTA' && p._dias >= 0 && p._dias <= daysThreshold)) return false;
@@ -375,19 +505,6 @@ function applyFilters(recalcStatus = true) {
     }
     return true;
   });
-  // Eventos para filtro personalizado
-  if (refs.customDateStart) {
-    refs.customDateStart.onchange = function(e) {
-      customDateStart = e.target.value;
-      applyFilters();
-    };
-  }
-  if (refs.customDateEnd) {
-    refs.customDateEnd.onchange = function(e) {
-      customDateEnd = e.target.value;
-      applyFilters();
-    };
-  }
   sortFiltered();
   currentPage = 1;
   render();
@@ -718,6 +835,7 @@ function bindEvents() {
     }
   });
   refs.themeToggle?.addEventListener('click', () => toggleTheme(refs.themeToggle));
+  refs.logoutBtnMobile?.addEventListener('click', logout);
   refs.openDrawer?.addEventListener('click', openDrawer);
 
   // Desktop
@@ -732,6 +850,7 @@ function bindEvents() {
     }
   });
   refs.themeToggleDesktop?.addEventListener('click', () => toggleTheme(refs.themeToggleDesktop));
+  refs.logoutBtnDesktop?.addEventListener('click', logout);
   refs.openDrawerDesktop?.addEventListener('click', openDrawer);
 
   // Shared
@@ -871,11 +990,11 @@ function toggleTheme(btn) {
 }
 
 function syncInputsFromState() {
-  refs.search.value = currentSearch;
-  refs.statusFilter.value = currentStatusFilter;
-  refs.filterGrupo.value = currentGrupo;
-  refs.filterMarca.value = currentMarca;
-  refs.groupBy.value = groupBy;
+  if (refs.search) refs.search.value = currentSearch;
+  if (refs.statusFilter) refs.statusFilter.value = currentStatusFilter;
+  if (refs.filterGrupo) refs.filterGrupo.value = currentGrupo;
+  if (refs.filterMarca) refs.filterMarca.value = currentMarca;
+  if (refs.groupBy) refs.groupBy.value = groupBy;
   // Sincroniza ambos inputs de dias
   if (refs.daysThreshold) refs.daysThreshold.value = daysThreshold;
   if (refs.daysThresholdDesktop) refs.daysThresholdDesktop.value = daysThreshold;
@@ -887,6 +1006,13 @@ function syncInputsFromState() {
 
 function init() {
   document.documentElement.setAttribute('data-theme', loadTheme());
+  
+  // Inicializar sistema de sessão ANTES de tudo
+  if (!initializeSession()) {
+    console.log('Sessão inválida, redirecionando para login...');
+    return; // Para a execução se a sessão for inválida
+  }
+  
   loadState();
   // update order button to reflect persisted state
   updateOrderBtnLabel();
@@ -894,7 +1020,40 @@ function init() {
   window.addEventListener('pointerdown', () => { window.__USER_INTERACTED__ = true; }, { once: true });
   window.addEventListener('keydown', () => { window.__USER_INTERACTED__ = true; }, { once: true });
   initRefs();
+  
+  // Aplicar valores padrão IMEDIATAMENTE após initRefs
+  console.log('Aplicando valores padrão: Status =', currentStatusFilter, ', Dias =', daysThreshold);
+  if (refs.statusFilter) {
+    refs.statusFilter.value = currentStatusFilter;
+    console.log('Status filter definido para:', refs.statusFilter.value);
+  }
+  if (refs.daysThreshold) {
+    refs.daysThreshold.value = daysThreshold;
+    console.log('Days threshold definido para:', refs.daysThreshold.value);
+  }
+  
   bindEvents();
+  // Sincronizar inputs com o estado carregado ANTES de carregar produtos
+  syncInputsFromState();
+  
+  // Verificação final para garantir que os valores estão corretos
+  setTimeout(() => {
+    console.log('Verificação final:');
+    console.log('Status filter atual:', refs.statusFilter?.value);
+    console.log('Days threshold atual:', refs.daysThreshold?.value);
+    console.log('Variáveis JS: Status =', currentStatusFilter, ', Dias =', daysThreshold);
+    
+    // Forçar valores se necessário
+    if (refs.statusFilter && refs.statusFilter.value !== currentStatusFilter) {
+      console.log('Forçando status filter para:', currentStatusFilter);
+      refs.statusFilter.value = currentStatusFilter;
+    }
+    if (refs.daysThreshold && refs.daysThreshold.value != daysThreshold) {
+      console.log('Forçando days threshold para:', daysThreshold);
+      refs.daysThreshold.value = daysThreshold;
+    }
+  }, 100);
+  
   loadProducts();
 }
 document.addEventListener('DOMContentLoaded', init);

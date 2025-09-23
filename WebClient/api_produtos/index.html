@@ -6,6 +6,58 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <link rel="icon" type="image/png" href="./img/icon-s.png" />
   <link rel="stylesheet" href="./css/styles.css" />
+  
+  <!-- Proteção de Login - Executa antes de qualquer coisa -->
+  <script>
+    (function() {
+      const SESSION_TIMEOUT = 15 * 60 * 1000; // 15 minutos
+      
+      // Função para verificar se o usuário está logado
+      function isUserLoggedIn() {
+        try {
+          const userSession = localStorage.getItem('app_user');
+          if (!userSession) return false;
+          
+          const user = JSON.parse(userSession);
+          // Verificar se tem os campos mínimos necessários
+          if (!user || (!user.USE_CODIGO && !user.USE_LOGIN)) {
+            return false;
+          }
+          
+          // Verificar se a sessão não expirou
+          const timestamp = localStorage.getItem('app_session_timestamp');
+          if (!timestamp) {
+            console.log('Timestamp de sessão não encontrado');
+            return false;
+          }
+          
+          const timeDiff = Date.now() - parseInt(timestamp);
+          if (timeDiff > SESSION_TIMEOUT) {
+            console.log('Sessão expirada (' + Math.round(timeDiff/1000/60) + ' minutos)');
+            // Limpar sessão expirada
+            localStorage.removeItem('app_user');
+            localStorage.removeItem('app_session_timestamp');
+            return false;
+          }
+          
+          return true;
+        } catch (error) {
+          console.warn('Erro ao verificar sessão de usuário:', error);
+          return false;
+        }
+      }
+
+      // Verificar autenticação imediatamente
+      if (!isUserLoggedIn()) {
+        console.log('Usuário não autenticado ou sessão expirada, redirecionando para login...');
+        // Redirecionar para login se não estiver autenticado
+        window.location.href = 'login.html';
+        return; // Parar execução do resto da página
+      }
+      
+      console.log('Usuário autenticado, carregando aplicação...');
+    })();
+  </script>
 </head>
 <body>
   <header class="mobile-header" id="mobile-header">
@@ -15,7 +67,7 @@
       </button>
       <div style="flex:1;"></div>
       <button id="order-by-btn-mobile" class="icon-btn only-mobile" aria-label="Ordenar (clique para próximo; Shift+click inverte direção)" title="Ordenar (clique para próximo; Shift+click inverte direção)" style="margin-right:8px;">⇅</button>
-      <button id="logout-btn-mobile" class="icon-btn hdr-btn only-mobile" style="background:var(--c-panel-alt); color:var(--c-accent); border:1px solid var(--c-accent); font-weight:600; font-size:1.05rem; border-radius:8px; padding:0.45rem 1.1rem; cursor:pointer; margin-left:auto;" onclick="window.location.href='login.html'">
+      <button id="logout-btn-mobile" class="icon-btn hdr-btn only-mobile" style="background:var(--c-panel-alt); color:var(--c-accent); border:1px solid var(--c-accent); font-weight:600; font-size:1.05rem; border-radius:8px; padding:0.45rem 1.1rem; cursor:pointer; margin-left:auto;">
         Sair
       </button>
     </div>
@@ -57,13 +109,6 @@
         </select>
       </div>
        
-      <!-- CONTROLE DE TAMANHO DE FONTE -->
-      <div class="drawer-group">
-        <label for="custom-date-start">Validade de</label>
-        <input type="date" id="custom-date-start" />
-        <label for="custom-date-end">até</label>
-        <input type="date" id="custom-date-end" />
-      </div>
       <div class="drawer-legend">
         <span class="badge status-ok">OK</span>
         <span class="badge status-alerta">Próx. vencer</span>
@@ -71,7 +116,7 @@
       </div>
       <div class="drawer-group">
         <label for="days-threshold">Dias para alerta (próx. vencer)</label>
-        <input type="number" id="days-threshold" min="1" max="365" value="15" />
+        <input type="number" id="days-threshold" min="1" max="365" value="30" />
         <small style="display:block; margin-top:6px; color:var(--c-muted);">Defina em quantos dias um produto entra em alerta antes da validade.</small>
       </div>
       
@@ -119,7 +164,7 @@
     </div>
     <div style="justify-self: end; display:flex; gap:8px; align-items:center;">
   <button id="order-by-btn" type="button" class="icon-btn only-desktop" aria-label="Ordenar (clique para próximo; Shift+click inverte direção)" title="Ordenar (clique para próximo; Shift+click inverte direção)">⇅</button>
-      <button id="logout-btn-desktop" class="icon-btn hdr-btn only-desktop" style="background:var(--c-panel-alt); color:var(--c-accent); border:1px solid var(--c-accent); font-weight:600; font-size:1.05rem; border-radius:8px; padding:0.45rem 1.1rem; cursor:pointer;" onclick="window.location.href='login.html'">
+      <button id="logout-btn-desktop" class="icon-btn hdr-btn only-desktop" style="background:var(--c-panel-alt); color:var(--c-accent); border:1px solid var(--c-accent); font-weight:600; font-size:1.05rem; border-radius:8px; padding:0.45rem 1.1rem; cursor:pointer;">
         Sair
       </button>
     </div>

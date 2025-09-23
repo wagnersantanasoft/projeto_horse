@@ -35,7 +35,7 @@ body {
 
 .status-vencido { background: #fee2e2; }
 .status-alerta  { background: #fff7ed; }
-.status-valido  {}
+.status-valido { background: #dcfce7; }
 .status-sem_data { background: #f1f5f9; }
 .status-erro { background: #ffe4e6; }
 

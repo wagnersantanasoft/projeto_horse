@@ -17,7 +17,6 @@ procedure StartServer;
 var
   Port: Integer;
 begin
-
   // Cria conexão
   DM := TDM.Create;
 
@@ -27,7 +26,7 @@ begin
   // Rotas
   RegisterRoutes;
 
-  Port := 9001; // pode ler do INI se quiser
+  Port := 9000; // pode ler do INI se quiser
   Writeln('Iniciando Horse na porta ' + Port.ToString + ' ...');
   // PARA versões antigas: apenas isso
   THorse.Listen(Port); // bloqueante
