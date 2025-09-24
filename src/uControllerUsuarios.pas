@@ -61,7 +61,7 @@ begin
         Obj.AddPair('USE_CODIGO', TJSONNumber.Create(Q.FieldByName('USE_CODIGO').AsInteger));
         Obj.AddPair('USE_NOME', Q.FieldByName('USE_NOME').AsString);
         Obj.AddPair('USE_LOGIN', Q.FieldByName('USE_LOGIN').AsString);
-        Obj.AddPair('USE_SENHA', EncrypSenha(Q.FieldByName('USE_SENHA').AsString), 9);
+        Obj.AddPair('USE_SENHA', EncrypSenha(Q.FieldByName('USE_SENHA').AsString, 9));
         Obj.AddPair('USE_ACESSO', Q.FieldByName('USE_ACESSO').AsString);
         Obj.AddPair('USE_AUTORIZADO', Q.FieldByName('USE_AUTORIZADO').AsString);
         Obj.AddPair('USE_S', Q.FieldByName('USE_S').AsString);

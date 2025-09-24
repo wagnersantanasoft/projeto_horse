@@ -53,7 +53,7 @@ begin
     Q.Open;
     Res.ContentType('application/json');
     if Q.IsEmpty then
-      Res.Status(404).Send('{"error":"UsuÃ¡rio nÃ£o encontrado"}')
+      Res.Status(404).Send('{"error":"Usuário não encontrado"}')
     else
     begin
       Obj := TJSONObject.Create;
@@ -61,7 +61,7 @@ begin
         Obj.AddPair('USE_CODIGO', TJSONNumber.Create(Q.FieldByName('USE_CODIGO').AsInteger));
         Obj.AddPair('USE_NOME', Q.FieldByName('USE_NOME').AsString);
         Obj.AddPair('USE_LOGIN', Q.FieldByName('USE_LOGIN').AsString);
-        Obj.AddPair('USE_SENHA', EncrypSenha(Q.FieldByName('USE_SENHA').AsString, 9));
+        Obj.AddPair('USE_SENHA', EncrypSenha(Q.FieldByName('USE_SENHA').AsString), 9);
         Obj.AddPair('USE_ACESSO', Q.FieldByName('USE_ACESSO').AsString);
         Obj.AddPair('USE_AUTORIZADO', Q.FieldByName('USE_AUTORIZADO').AsString);
         Obj.AddPair('USE_S', Q.FieldByName('USE_S').AsString);
@@ -96,7 +96,7 @@ begin
   RawBody := Req.Body;
   if RawBody = '' then
   begin
-    Res.Status(400).Send('{"error":"Corpo da requisiÃ§Ã£o vazio"}');
+    Res.Status(400).Send('{"error":"Corpo da requisição vazio"}');
     Exit;
   end;
   try
@@ -104,13 +104,13 @@ begin
   except
     on E: Exception do
     begin
-      Res.Status(400).Send('{"error":"JSON invÃ¡lido"}');
+      Res.Status(400).Send('{"error":"JSON inválido"}');
       Exit;
     end;
   end;
   if not Assigned(Body) then
   begin
-    Res.Status(400).Send('{"error":"JSON invÃ¡lido ou nÃ£o enviado"}');
+    Res.Status(400).Send('{"error":"JSON inválido ou não enviado"}');
     Exit;
   end;
 
@@ -145,7 +145,7 @@ begin
     Q.ExecSQL;
 
     Res.ContentType('application/json');
-    Res.Status(201).Send(Format('{"message":"UsuÃ¡rio criado","USE_CODIGO":%d}', [NewId]));
+    Res.Status(201).Send(Format('{"message":"Usuário criado","USE_CODIGO":%d}', [NewId]));
   finally
     Q.Free;
     Body.Free;
@@ -163,7 +163,7 @@ begin
   RawBody := Req.Body;
   if RawBody = '' then
   begin
-    Res.Status(400).Send('{"error":"Corpo da requisiÃ§Ã£o vazio"}');
+    Res.Status(400).Send('{"error":"Corpo da requisição vazio"}');
     Exit;
   end;
   try
@@ -171,13 +171,13 @@ begin
   except
     on E: Exception do
     begin
-      Res.Status(400).Send('{"error":"JSON invÃ¡lido"}');
+      Res.Status(400).Send('{"error":"JSON inválido"}');
       Exit;
     end;
   end;
   if not Assigned(Body) then
   begin
-    Res.Status(400).Send('{"error":"JSON invÃ¡lido ou nÃ£o enviado"}');
+    Res.Status(400).Send('{"error":"JSON inválido ou não enviado"}');
     Exit;
   end;
 
@@ -208,9 +208,9 @@ begin
 
     Res.ContentType('application/json');
     if Q.RowsAffected = 0 then
-      Res.Status(404).Send('{"error":"UsuÃ¡rio nÃ£o atualizado"}')
+      Res.Status(404).Send('{"error":"Usuário não atualizado"}')
     else
-      Res.Send('{"message":"UsuÃ¡rio atualizado"}');
+      Res.Send('{"message":"Usuário atualizado"}');
   finally
     Q.Free;
     Body.Free;
@@ -231,9 +231,9 @@ begin
     Q.ExecSQL;
     Res.ContentType('application/json');
     if Q.RowsAffected = 0 then
-      Res.Status(404).Send('{"error":"UsuÃ¡rio nÃ£o removido"}')
+      Res.Status(404).Send('{"error":"Usuário não removido"}')
     else
-      Res.Send('{"message":"UsuÃ¡rio removido"}');
+      Res.Send('{"message":"Usuário removido"}');
   finally
     Q.Free;
   end;
