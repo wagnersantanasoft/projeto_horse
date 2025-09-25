@@ -160,6 +160,7 @@
         <DCCReference Include="uControllerMarcas.pas"/>
         <DCCReference Include="uControllerGrupos.pas"/>
         <DCCReference Include="uControllerUsuarios.pas"/>
+        <DCCReference Include="uFuncoes.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

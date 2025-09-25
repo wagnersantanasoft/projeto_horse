@@ -10,11 +10,9 @@ uses
   uControllerProdutos in 'uControllerProdutos.pas',
   uControllerMarcas in 'uControllerMarcas.pas',
   uControllerGrupos in 'uControllerGrupos.pas',
-  uControllerUsuarios in 'uControllerUsuarios.pas',
-  uFuncoes in 'uFuncoes.pas';
+  uControllerUsuarios in 'uControllerUsuarios.pas';
 
 begin
-
   ReportMemoryLeaksOnShutdown := DebugHook <> 0;
   try
     WriteLn('Iniciando servidor...');
@@ -28,5 +26,4 @@ begin
       ReadLn;
     end;
   end;
-
 end.

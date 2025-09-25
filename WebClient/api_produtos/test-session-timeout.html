@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Timeout de Sessão</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .warning { background: #fff3cd; color: #856404; }
+        .error { background: #f8d7da; color: #721c24; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Teste de Timeout de Sessão</h1>
+    
+    <div id="status" class="status">Verificando status da sessão...</div>
+    
+    <h3>Controles de Teste:</h3>
+    <button onclick="checkSession()">Verificar Sessão</button>
+    <button onclick="testLogout()">Logout Manual</button>
+    <button onclick="clearSession()">Limpar Sessão</button>
+    <button onclick="expireSession()">Forçar Expiração</button>
+    
+    <h3>Informações da Sessão:</h3>
+    <div id="sessionInfo"></div>
+    
+    <h3>Log de Eventos:</h3>
+    <div id="log" style="max-height: 300px; overflow-y: scroll; background: #f8f9fa; padding: 10px; border: 1px solid #dee2e6;"></div>
+
+    <script>
+        const SESSION_TIMEOUT = 15 * 60 * 1000; // 15 minutos
+        
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        function updateStatus(message, type = 'success') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+        
+        function checkSession() {
+            try {
+                const userSession = localStorage.getItem('app_user');
+                const timestamp = localStorage.getItem('app_session_timestamp');
+                
+                if (!userSession) {
+                    updateStatus('Nenhuma sessão encontrada', 'error');
+                    log('❌ Nenhuma sessão de usuário encontrada');
+                    return false;
+                }
+                
+                if (!timestamp) {
+                    updateStatus('Timestamp de sessão não encontrado', 'error');
+                    log('❌ Timestamp de sessão não encontrado');
+                    return false;
+                }
+                
+                const user = JSON.parse(userSession);
+                const sessionAge = Date.now() - parseInt(timestamp);
+                const remainingTime = SESSION_TIMEOUT - sessionAge;
+                
+                if (sessionAge > SESSION_TIMEOUT) {
+                    updateStatus('Sessão expirada', 'error');
+                    log(`❌ Sessão expirada há ${Math.round(sessionAge/1000/60)} minutos`);
+                    return false;
+                }
+                
+                const remainingMinutes = Math.round(remainingTime / 1000 / 60);
+                updateStatus(`Sessão válida - ${remainingMinutes} minutos restantes`, 'success');
+                log(`✅ Sessão válida para usuário ${user.USE_LOGIN || user.USE_CODIGO}`);
+                
+                document.getElementById('sessionInfo').innerHTML = `
+                    <strong>Usuário:</strong> ${user.USE_LOGIN || user.USE_CODIGO}<br>
+                    <strong>Idade da sessão:</strong> ${Math.round(sessionAge/1000/60)} minutos<br>
+                    <strong>Tempo restante:</strong> ${remainingMinutes} minutos<br>
+                    <strong>Timestamp:</strong> ${new Date(parseInt(timestamp)).toLocaleString()}
+                `;
+                
+                return true;
+            } catch (error) {
+                updateStatus('Erro ao verificar sessão', 'error');
+                log(`❌ Erro: ${error.message}`);
+                return false;
+            }
+        }
+        
+        function testLogout() {
+            localStorage.removeItem('app_user');
+            localStorage.removeItem('app_session_timestamp');
+            updateStatus('Logout realizado', 'warning');
+            log('🚪 Logout manual executado');
+            document.getElementById('sessionInfo').innerHTML = '';
+        }
+        
+        function clearSession() {
+            localStorage.clear();
+            updateStatus('Todas as sessões limpas', 'warning');
+            log('🧹 localStorage completamente limpo');
+            document.getElementById('sessionInfo').innerHTML = '';
+        }
+        
+        function expireSession() {
+            const expiredTimestamp = Date.now() - SESSION_TIMEOUT - 60000; // 1 minuto a mais
+            localStorage.setItem('app_session_timestamp', expiredTimestamp.toString());
+            updateStatus('Sessão forçadamente expirada', 'warning');
+            log('⏰ Timestamp forçado para expiração');
+        }
+        
+        // Verificação inicial
+        window.onload = function() {
+            log('🔄 Página de teste carregada');
+            checkSession();
+            
+            // Verificação automática a cada 30 segundos
+            setInterval(() => {
+                log('🔄 Verificação automática...');
+                checkSession();
+            }, 30000);
+        };
+    </script>
+</body>
+</html>

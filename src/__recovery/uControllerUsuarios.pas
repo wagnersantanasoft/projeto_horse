@@ -53,7 +53,7 @@ begin
     Q.Open;
     Res.ContentType('application/json');
     if Q.IsEmpty then
-      Res.Status(404).Send('{"error":"Usu�rio n�o encontrado"}')
+      Res.Status(404).Send('{"error":"Usuário não encontrado"}')
     else
     begin
       Obj := TJSONObject.Create;
@@ -96,7 +96,7 @@ begin
   RawBody := Req.Body;
   if RawBody = '' then
   begin
-    Res.Status(400).Send('{"error":"Corpo da requisi��o vazio"}');
+    Res.Status(400).Send('{"error":"Corpo da requisição vazio"}');
     Exit;
   end;
   try
@@ -104,13 +104,13 @@ begin
   except
     on E: Exception do
     begin
-      Res.Status(400).Send('{"error":"JSON inv�lido"}');
+      Res.Status(400).Send('{"error":"JSON inválido"}');
       Exit;
     end;
   end;
   if not Assigned(Body) then
   begin
-    Res.Status(400).Send('{"error":"JSON inv�lido ou n�o enviado"}');
+    Res.Status(400).Send('{"error":"JSON inválido ou não enviado"}');
     Exit;
   end;
 
@@ -145,7 +145,7 @@ begin
     Q.ExecSQL;
 
     Res.ContentType('application/json');
-    Res.Status(201).Send(Format('{"message":"Usu�rio criado","USE_CODIGO":%d}', [NewId]));
+    Res.Status(201).Send(Format('{"message":"Usuário criado","USE_CODIGO":%d}', [NewId]));
   finally
     Q.Free;
     Body.Free;
@@ -163,7 +163,7 @@ begin
   RawBody := Req.Body;
   if RawBody = '' then
   begin
-    Res.Status(400).Send('{"error":"Corpo da requisi��o vazio"}');
+    Res.Status(400).Send('{"error":"Corpo da requisição vazio"}');
     Exit;
   end;
   try
@@ -171,13 +171,13 @@ begin
   except
     on E: Exception do
     begin
-      Res.Status(400).Send('{"error":"JSON inv�lido"}');
+      Res.Status(400).Send('{"error":"JSON inválido"}');
       Exit;
     end;
   end;
   if not Assigned(Body) then
   begin
-    Res.Status(400).Send('{"error":"JSON inv�lido ou n�o enviado"}');
+    Res.Status(400).Send('{"error":"JSON inválido ou não enviado"}');
     Exit;
   end;
 
@@ -208,9 +208,9 @@ begin
 
     Res.ContentType('application/json');
     if Q.RowsAffected = 0 then
-      Res.Status(404).Send('{"error":"Usu�rio n�o atualizado"}')
+      Res.Status(404).Send('{"error":"Usuário não atualizado"}')
     else
-      Res.Send('{"message":"Usu�rio atualizado"}');
+      Res.Send('{"message":"Usuário atualizado"}');
   finally
     Q.Free;
     Body.Free;
@@ -231,11 +231,58 @@ begin
     Q.ExecSQL;
     Res.ContentType('application/json');
     if Q.RowsAffected = 0 then
-      Res.Status(404).Send('{"error":"Usu�rio n�o removido"}')
+      Res.Status(404).Send('{"error":"Usuário não removido"}')
     else
-      Res.Send('{"message":"Usu�rio removido"}');
+      Res.Send('{"message":"Usuário removido"}');
   finally
     Q.Free;
+  end;
+end;
+
+function DataSetToJSONObject(Q: TFDQuery): TJSONObject;
+begin
+  Result := TJSONObject.Create;
+  for var i := 0 to Q.FieldCount - 1 do
+    Result.AddPair(Q.Fields[i].FieldName, Q.Fields[i].AsString);
+end;
+
+procedure UsuarioLogin(Req: THorseRequest; Res: THorseResponse; Next: TProc);
+var
+  Body: TJSONObject;
+  Login, Senha: string;
+  Q: TFDQuery;
+  Obj: TJSONObject;
+begin
+  Body := TJSONObject.ParseJSONValue(Req.Body) as TJSONObject;
+  try
+    Login := Body.GetValue<string>('login', '');
+    Senha := Body.GetValue<string>('senha', '');
+
+    Q := TFDQuery.Create(nil);
+    try
+      Q.Connection := DM.FDConnection;
+      Q.SQL.Text := 'SELECT * FROM USUARIOS WHERE USE_LOGIN = :login AND USE_SENHA = :senha';
+      Q.ParamByName('login').AsString := Login;
+      Q.ParamByName('senha').AsString := Senha; // Criptografe se necessário EncrypSenha(Q.FieldByName('USE_SENHA').AsString, 9)
+      Q.Open;
+
+      if not Q.IsEmpty then
+      begin
+        Obj := DataSetToJSONObject(Q); // Certifique-se de ter essa função
+        try
+          Res.ContentType('application/json');
+          Res.Send('{"auth":true,"usuario":' + Obj.ToJSON + '}');
+        finally
+          Obj.Free;
+        end;
+      end
+      else
+        Res.Status(401).Send('{"auth":false,"error":"Usuário ou senha inválidos"}');
+    finally
+      Q.Free;
+    end;
+  finally
+    Body.Free;
   end;
 end;
 
