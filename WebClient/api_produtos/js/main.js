@@ -445,10 +445,19 @@ function buildMarcaGrupoOptions() {
   const marcas = Array.from(new Set(allProducts.map(p => p.MAR_DESCRI).filter(Boolean))).sort();
   const grupos = Array.from(new Set(allProducts.map(p => p.GP_DESCRI).filter(Boolean))).sort();
 
-  refs.filterMarca.innerHTML = '<option value="">Todas</option>' +
-    marcas.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
-  refs.filterGrupo.innerHTML = '<option value="">Todos</option>' +
-    grupos.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');
+  // Popular datalist de marcas
+  const marcasList = document.getElementById('marcas-list');
+  if (marcasList) {
+    marcasList.innerHTML = '<option value="">Todas</option>' +
+      marcas.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+  }
+
+  // Popular datalist de grupos
+  const gruposList = document.getElementById('grupos-list');
+  if (gruposList) {
+    gruposList.innerHTML = '<option value="">Todos</option>' +
+      grupos.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');
+  }
 }
 
 function escapeHtml(str) {
@@ -870,14 +879,33 @@ function bindEvents() {
     currentStatusFilter = refs.statusFilter.value;
     applyFilters();
   });
+  
+  // Eventos para grupo com busca digitável
   refs.filterGrupo?.addEventListener('change', () => {
     currentGrupo = refs.filterGrupo.value;
     applyFilters();
   });
+  refs.filterGrupo?.addEventListener('input', () => {
+    clearTimeout(debounceId);
+    debounceId = setTimeout(() => {
+      currentGrupo = refs.filterGrupo.value;
+      applyFilters();
+    }, 300);
+  });
+  
+  // Eventos para marca com busca digitável
   refs.filterMarca?.addEventListener('change', () => {
     currentMarca = refs.filterMarca.value;
     applyFilters();
   });
+  refs.filterMarca?.addEventListener('input', () => {
+    clearTimeout(debounceId);
+    debounceId = setTimeout(() => {
+      currentMarca = refs.filterMarca.value;
+      applyFilters();
+    }, 300);
+  });
+  
   refs.groupBy?.addEventListener('change', () => {
     groupBy = refs.groupBy.value;
     applyFilters();

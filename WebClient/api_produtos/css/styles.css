@@ -751,6 +751,34 @@ tr.status-VENCIDO:hover { background: #4a1818; }
   box-shadow: 0 0 0 1px var(--c-accent);
 }
 
+/* Searchable select with datalist */
+.searchable-select {
+  position: relative;
+  width: 100%;
+}
+
+.searchable-select input[list] {
+  width: 100%;
+  background: var(--c-panel-alt);
+  border: 1px solid var(--c-border);
+  color: var(--c-text);
+  border-radius: var(--radius);
+  padding: .5rem .55rem;
+  font-size: .75rem;
+  outline: none;
+  transition: border-color .15s;
+}
+
+.searchable-select input[list]:focus {
+  border-color: var(--c-accent);
+  box-shadow: 0 0 0 1px var(--c-accent);
+}
+
+.searchable-select input[list]::placeholder {
+  color: var(--c-text-dim);
+  opacity: 0.8;
+}
+
 .drawer-legend {
   display: flex;
   gap: .4rem;

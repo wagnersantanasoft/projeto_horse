@@ -90,15 +90,21 @@
       </div>
       <div class="drawer-group">
         <label for="filter-grupo">Grupo</label>
-        <select id="filter-grupo">
-          <option value="">Todos</option>
-        </select>
+        <div class="searchable-select">
+          <input type="text" id="filter-grupo" list="grupos-list" placeholder="Digite ou escolha um grupo..." autocomplete="off" />
+          <datalist id="grupos-list">
+            <option value="">Todos</option>
+          </datalist>
+        </div>
       </div>
       <div class="drawer-group">
         <label for="filter-marca">Marca</label>
-        <select id="filter-marca">
-          <option value="">Todas</option>
-        </select>
+        <div class="searchable-select">
+          <input type="text" id="filter-marca" list="marcas-list" placeholder="Digite ou escolha uma marca..." autocomplete="off" />
+          <datalist id="marcas-list">
+            <option value="">Todas</option>
+          </datalist>
+        </div>
       </div>
       <div class="drawer-group">
         <label for="group-by">Agrupar por</label>
