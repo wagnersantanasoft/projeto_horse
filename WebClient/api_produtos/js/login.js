@@ -50,45 +50,89 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // Garantir foco no input username sem deslocar o card (preventScroll quando disponível)
+  // Garantir que o card permaneça sempre centralizado - sem movimento
   (function(){
+    const card = document.querySelector('.login-container');
     const u = document.getElementById('username');
-    try {
-      if (u) {
-        // timeout curto para esperar a pintura inicial
-        setTimeout(() => {
-          if (typeof u.focus === 'function') {
-            try { u.focus({ preventScroll: true }); }
-            catch(e) { u.focus(); }
-          }
-        }, 120);
+    
+    // Função para forçar centralização
+    function forceCenter() {
+      if (card) {
+        card.style.position = 'fixed';
+        card.style.left = '50%';
+        card.style.top = '50%';
+        card.style.transform = 'translate(-50%, -50%)';
+        card.style.zIndex = '9999';
       }
-    } catch(e){}
+    }
+    
+    // Aplicar centralização forçada
+    forceCenter();
+    
+    // Foco sem scroll
+    if (u) {
+      setTimeout(() => {
+        if (typeof u.focus === 'function') {
+          try { 
+            u.focus({ preventScroll: true }); 
+            // Forçar centralização após foco
+            forceCenter();
+          }
+          catch(e) { 
+            u.focus(); 
+            forceCenter();
+          }
+        }
+      }, 120);
+    }
+    
+    // Monitor para garantir que o card não se mova
+    const observer = new MutationObserver(() => {
+      forceCenter();
+    });
+    
+    if (card) {
+      observer.observe(card, { 
+        attributes: true, 
+        attributeFilter: ['style'] 
+      });
+    }
+    
+    // Reforçar centralização em eventos de viewport
+    window.addEventListener('resize', forceCenter, { passive: true });
+    window.addEventListener('orientationchange', () => {
+      setTimeout(forceCenter, 100);
+    }, { passive: true });
+    
   })();
 
-  // Fallback para alguns WebViews/ navegadores móveis que reposicionam fixed ao abrir teclado
+  // Prevenção de movimento por teclado virtual (versão simplificada)
   (function(){
     const inputs = Array.from(document.querySelectorAll('.login-container input'));
     if (!inputs.length) return;
-    let originalHtmlHeight = '';
     
-    function onFocus() {
-      try {
-        // fixa a altura do root para o valor atual da janela (evita resize da viewport)
-        originalHtmlHeight = document.documentElement.style.height || '';
-        document.documentElement.style.height = window.innerHeight + 'px';
-      } catch(e){}
-    }
-    
-    function onBlur(){
-      try {
-        document.documentElement.style.height = originalHtmlHeight;
-      } catch(e){}
-    }
-    
-    inputs.forEach(i => {
-      i.addEventListener('focus', onFocus, { passive: true });
-      i.addEventListener('blur', onBlur, { passive: true });
+    inputs.forEach(input => {
+      input.addEventListener('focus', (e) => {
+        // Prevenir scroll e manter card centralizado
+        e.preventDefault();
+        document.body.style.overflow = 'hidden';
+        document.documentElement.style.overflow = 'hidden';
+        
+        // Forçar centralização
+        const card = document.querySelector('.login-container');
+        if (card) {
+          card.style.position = 'fixed';
+          card.style.left = '50%';
+          card.style.top = '50%';
+          card.style.transform = 'translate(-50%, -50%)';
+        }
+      }, { passive: false });
+      
+      input.addEventListener('blur', () => {
+        // Manter overflow hidden para evitar scroll
+        document.body.style.overflow = 'hidden';
+        document.documentElement.style.overflow = 'hidden';
+      }, { passive: true });
     });
   })();
 });
