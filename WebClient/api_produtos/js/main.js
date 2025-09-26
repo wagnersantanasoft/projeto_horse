@@ -15,7 +15,7 @@ let filtered = [];
 let currentPage = 1;
 let currentSearch = '';
 let daysThreshold = 30;
-let currentStatusFilter = 'ALERTA';
+let currentStatusFilter = '';
 let currentGrupo = '';
 let currentMarca = '';
 let estoquePositivo = false;
@@ -186,6 +186,7 @@ function saveState() {
     groupBy,
     sortField,
     sortDir,
+    estoquePositivo,
     theme: document.documentElement.getAttribute('data-theme')
   };
   localStorage.setItem(storageKey('prefs'), JSON.stringify(state));
@@ -208,8 +209,8 @@ function loadState() {
     
     currentSearch = s.search ?? '';
     
-    // Garantir que sempre use valores padrão se não houver dados válidos salvos
-    currentStatusFilter = s.status && s.status !== '' ? s.status : 'ALERTA';
+    // Carregar status salvo pelo usuário (sem forçar padrão fixo)
+    currentStatusFilter = s.status ?? '';
     daysThreshold = s.days && s.days > 0 ? s.days : 30;
     
     console.log('Valores após loadState: Status =', currentStatusFilter, ', Dias =', daysThreshold);
@@ -217,6 +218,7 @@ function loadState() {
     currentGrupo = s.grupo ?? '';
     currentMarca = s.marca ?? '';
     groupBy = s.groupBy ?? '';
+    estoquePositivo = s.estoquePositivo ?? false;
     sortField = s.sortField ?? '';
     sortDir = s.sortDir ?? 'asc';
       // if no saved sortField, prefer status-priority
@@ -313,12 +315,14 @@ function initFontSizeControl() {
   refs.reloadBtn = document.getElementById('reload-btn');
   refs.themeToggle = document.getElementById('theme-toggle');
   refs.logoutBtnMobile = document.getElementById('logout-btn-mobile');
+  refs.settingsBtnMobile = document.getElementById('settings-btn-mobile');
   // Desktop controls
   refs.openDrawerDesktop = document.getElementById('open-drawer-desktop');
   refs.daysThresholdDesktop = document.getElementById('days-threshold-desktop');
   refs.reloadBtnDesktop = document.getElementById('reload-btn-desktop');
   refs.themeToggleDesktop = document.getElementById('theme-toggle-desktop');
   refs.logoutBtnDesktop = document.getElementById('logout-btn-desktop');
+  refs.settingsBtnDesktop = document.getElementById('settings-btn-desktop');
   // Shared
   refs.tbody = document.getElementById('product-tbody');
   refs.cardsContainer = document.getElementById('cards-container');
@@ -328,6 +332,10 @@ function initFontSizeControl() {
   refs.drawer = document.getElementById('filter-drawer');
   refs.closeDrawer = document.getElementById('close-drawer');
   refs.drawerBackdrop = document.getElementById('drawer-backdrop');
+  // Settings modal
+  refs.settingsModal = document.getElementById('settings-modal');
+  refs.closeSettings = document.getElementById('close-settings');
+  refs.themeLabel = document.getElementById('theme-label');
   refs.applyFiltersBtn = document.getElementById('apply-filters');
   refs.statusFilter = document.getElementById('status-filter');
   refs.filterGrupo = document.getElementById('filter-grupo');
@@ -425,9 +433,37 @@ async function loadProducts() {
     buildMarcaGrupoOptions();
     syncInputsFromState();
     applyFilters(false);
-    setFeedback(`Carregado: ${allProducts.length} registros.`, 'success');
+    
+    // Feedback específico para busca vs carregamento inicial
+    if (currentSearch.length > 0) {
+      const searchType = /^\d+$/.test(currentSearch) ? 'código' : 'texto';
+      setFeedback(`✅ Busca por ${searchType} atualizada: ${filtered.length} resultado(s) de ${allProducts.length} produtos.`, 'success');
+    } else {
+      setFeedback(`Carregado: ${allProducts.length} registros.`, 'success');
+    }
   } catch (e) {
     setFeedback('Erro ao carregar: ' + e.message, 'error');
+  } finally {
+    setLoading(false);
+  }
+}
+
+// Função específica para busca em tempo real (opcional)
+async function searchProducts() {
+  if (currentSearch.length === 0) {
+    applyFilters(false);
+    return;
+  }
+  
+  setLoading(true, 'Buscando...');
+  try {
+    // Recarregar dados da API para ter informações atualizadas
+    allProducts = await productService.listAll();
+    computeAllStatuses();
+    applyFilters(false);
+    setFeedback(`🔍 Busca concluída: ${filtered.length} resultados encontrados.`, 'success');
+  } catch (e) {
+    setFeedback('Erro na busca: ' + e.message, 'error');
   } finally {
     setLoading(false);
   }
@@ -471,13 +507,7 @@ function applyFilters(recalcStatus = true) {
   filtered = allProducts.filter(p => {
     // Filtro de estoque positivo
     if (estoquePositivo && Number(p.PRO_ESTOQ1) <= 0) return false;
-    // Evento para filtro de estoque positivo
-    if (refs.estoquePositivo) {
-      refs.estoquePositivo.onchange = function(e) {
-        estoquePositivo = e.target.checked;
-        applyFilters();
-      };
-    }
+    
     // Filtro por status
     if (currentStatusFilter === 'ALERTA') {
       if (!(p._status === 'ALERTA' && p._dias >= 0 && p._dias <= daysThreshold)) return false;
@@ -664,7 +694,7 @@ function renderCard(prod) {
   const statusValidadeRow = document.createElement('div');
   statusValidadeRow.style.display = 'flex';
   statusValidadeRow.style.alignItems = 'center';
-  statusValidadeRow.style.gap = '10px';
+  statusValidadeRow.style.gap = '6px';
 
   const statusDiv = document.createElement('div');
   statusDiv.className = 'pc-status';
@@ -681,25 +711,24 @@ function renderCard(prod) {
   // Título
   const title = document.createElement('div');
   title.className = 'pc-title';
-  title.style.marginTop = '2px';
+  title.style.marginTop = '0px';
   title.innerHTML = highlight(prod.PRO_NOME, currentSearch);
 
   // Grid de metadados
   const meta = document.createElement('div');
   meta.className = 'meta-grid';
+  
   meta.innerHTML = `
     <span><span class="meta-label">CÓD</span>${escapeHtml(prod.PRO_CODIGO)}</span>
-    <span><span class="meta-label">CÓD. BARRA</span>${escapeHtml(prod.PRO_COD_BARRA)}</span>
-    <span class="meta-grupo"><span class="meta-label">GRUPO</span>${escapeHtml(prod.GP_DESCRI)}</span>
-    <span><span class="meta-label">PREÇO 1</span>${formatNum(prod.PRO_PRECO1)}</span>
-    <span><span class="meta-label">PREÇO 2</span>${formatNum(prod.PRO_PRECO2)}</span>
-    <span class="meta-marca"><span class="meta-label">MARCA</span>${escapeHtml(prod.MAR_DESCRI) || '-'}</span>
+    <span><span class="meta-label">PREÇO 1</span>R$ ${formatNum(prod.PRO_PRECO1)}</span>
     <span class="meta-estoque">
       <span class="meta-label">ESTOQUE</span>
-      <span style="display: flex; align-items: baseline; gap: 0.22em;">
-        <span class="estoque-valor">${formatNum(prod.PRO_ESTOQ1)} ${escapeHtml(prod.UND_NOME)}</span>
-      </span>
+      <span class="estoque-valor">${formatNum(prod.PRO_ESTOQ1)} ${escapeHtml(prod.UND_NOME) || 'UN'}</span>
     </span>
+    <span><span class="meta-label">CÓD. BARRA</span>${escapeHtml(prod.PRO_COD_BARRA)}</span>
+    <span><span class="meta-label">PREÇO 2</span>R$ ${formatNum(prod.PRO_PRECO2)}</span>
+    <span class="meta-marca"><span class="meta-label">MARCA</span>${escapeHtml(prod.MAR_DESCRI) || '-'}</span>
+    <span class="meta-grupo"><span class="meta-label">GRUPO</span>${escapeHtml(prod.GP_DESCRI)}</span>
   `;
 
   card.append(statusValidadeRow, title, meta);
@@ -831,6 +860,23 @@ function closeDrawer() {
   document.body.style.overflow = '';
 }
 
+/* Settings Modal */
+function openSettings() {
+  refs.settingsModal.hidden = false;
+  document.body.style.overflow = 'hidden';
+  updateThemeLabel();
+}
+function closeSettings() {
+  refs.settingsModal.hidden = true;
+  document.body.style.overflow = '';
+}
+function updateThemeLabel() {
+  if (refs.themeLabel) {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    refs.themeLabel.textContent = isDark ? 'Escuro' : 'Claro';
+  }
+}
+
 function bindEvents() {
   // Mobile
   refs.reloadBtn?.addEventListener('click', () => loadProducts());
@@ -845,6 +891,7 @@ function bindEvents() {
   });
   refs.themeToggle?.addEventListener('click', () => toggleTheme(refs.themeToggle));
   refs.logoutBtnMobile?.addEventListener('click', logout);
+  refs.settingsBtnMobile?.addEventListener('click', openSettings);
   refs.openDrawer?.addEventListener('click', openDrawer);
 
   // Desktop
@@ -860,7 +907,16 @@ function bindEvents() {
   });
   refs.themeToggleDesktop?.addEventListener('click', () => toggleTheme(refs.themeToggleDesktop));
   refs.logoutBtnDesktop?.addEventListener('click', logout);
+  refs.settingsBtnDesktop?.addEventListener('click', openSettings);
   refs.openDrawerDesktop?.addEventListener('click', openDrawer);
+
+  // Settings modal
+  refs.closeSettings?.addEventListener('click', closeSettings);
+  refs.settingsModal?.addEventListener('click', (e) => {
+    if (e.target === refs.settingsModal || e.target.classList.contains('modal-backdrop')) {
+      closeSettings();
+    }
+  });
 
   // Shared
   refs.closeDrawer.addEventListener('click', closeDrawer);
@@ -910,20 +966,50 @@ function bindEvents() {
     groupBy = refs.groupBy.value;
     applyFilters();
   });
+  
+  // Evento para checkbox de estoque positivo
+  refs.estoquePositivo?.addEventListener('change', () => {
+    estoquePositivo = refs.estoquePositivo.checked;
+    applyFilters();
+    saveState();
+  });
+  
   refs.clearSearch.addEventListener('click', () => {
     refs.search.value = '';
     currentSearch = '';
     applyFilters(false);
     refs.search.focus();
+    setFeedback('Busca limpa', 'info');
   });
+  
   let debounceId;
   refs.search.addEventListener('input', () => {
     clearTimeout(debounceId);
+    
+    // Indicador visual imediato
+    const searchValue = refs.search.value.trim();
+    if (searchValue.length > 0) {
+      refs.search.style.borderColor = 'var(--c-accent)';
+      refs.search.style.backgroundColor = 'rgba(33, 150, 243, 0.1)';
+    } else {
+      refs.search.style.borderColor = '';
+      refs.search.style.backgroundColor = '';
+    }
+    
     debounceId = setTimeout(() => {
-      currentSearch = refs.search.value.trim();
-      applyFilters(false);
-    }, 220);
+      currentSearch = searchValue;
+      
+      // Se há busca, recarregar dados da API para ter informações atualizadas
+      if (currentSearch.length > 0) {
+        setFeedback('🔍 Buscando dados atualizados na API...', 'info');
+        loadProducts(); // Recarregar da API
+      } else {
+        // Se não há busca, aplicar filtros nos dados em cache
+        applyFilters(false);
+      }
+    }, 500); // 500ms para evitar muitas chamadas à API
   });
+  
   refs.table.querySelector('thead').addEventListener('click', handleHeaderClick);
 
   initVoiceSearch({
@@ -977,6 +1063,8 @@ function bindEvents() {
       if (!refs.cameraOverlay.hidden) {
         const evt = new Event('click');
         refs.closeCamera.dispatchEvent(evt);
+      } else if (!refs.settingsModal.hidden) {
+        closeSettings();
       } else if (refs.drawer.classList.contains('open')) {
         closeDrawer();
       }
@@ -1015,6 +1103,8 @@ function toggleTheme(btn) {
   // Sincroniza símbolo no outro botão
   if (refs.themeToggle && refs.themeToggle !== btn) refs.themeToggle.textContent = btn.textContent;
   if (refs.themeToggleDesktop && refs.themeToggleDesktop !== btn) refs.themeToggleDesktop.textContent = btn.textContent;
+  // Atualiza label no modal de configurações
+  updateThemeLabel();
 }
 
 function syncInputsFromState() {
@@ -1023,6 +1113,8 @@ function syncInputsFromState() {
   if (refs.filterGrupo) refs.filterGrupo.value = currentGrupo;
   if (refs.filterMarca) refs.filterMarca.value = currentMarca;
   if (refs.groupBy) refs.groupBy.value = groupBy;
+  // Sincroniza checkbox de estoque positivo
+  if (refs.estoquePositivo) refs.estoquePositivo.checked = estoquePositivo;
   // Sincroniza ambos inputs de dias
   if (refs.daysThreshold) refs.daysThreshold.value = daysThreshold;
   if (refs.daysThresholdDesktop) refs.daysThresholdDesktop.value = daysThreshold;
