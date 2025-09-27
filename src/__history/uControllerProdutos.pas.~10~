@@ -246,12 +246,12 @@ begin
   try
     Q.Connection := DM.FDConnection;
     Q.SQL.Text :=
-      'UPDATE PRODUTOS SET pro_validade = :validade WHERE pro_codigo = :id';
+      'UPDATE PRODUTOS SET pro_preco1 = :preco1, pro_preco2 = :preco2, pro_estoq1 = :estoque, pro_validade = :validade WHERE pro_codigo = :id';
 
     // Lê como Double para máxima compatibilidade
-    //Q.ParamByName('preco1').AsFloat := Body.GetValue<Double>('pro_preco1', 0);
-    //Q.ParamByName('preco2').AsFloat := Body.GetValue<Double>('pro_preco2', 0);
-    //Q.ParamByName('estoque').AsFloat := Body.GetValue<Double>('pro_estoq1', 0);
+    Q.ParamByName('preco1').AsFloat := Body.GetValue<Double>('pro_preco1', 0);
+    Q.ParamByName('preco2').AsFloat := Body.GetValue<Double>('pro_preco2', 0);
+    Q.ParamByName('estoque').AsFloat := Body.GetValue<Double>('pro_estoq1', 0);
 
     DataValidadeStr := Body.GetValue<string>('pro_validade', '');
     if DataValidadeStr <> '' then
