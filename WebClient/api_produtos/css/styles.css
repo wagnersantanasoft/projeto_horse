@@ -1275,6 +1275,184 @@ video {
   min-height: .9em;
 }
 
+/* Notificação Flash - Sistema de alertas visuais */
+.flash-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  min-width: 300px;
+  max-width: 400px;
+  padding: 1rem 1.2rem;
+  border-radius: 8px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 500;
+  transform: translateX(120%);
+  transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  animation: slideInBounce 0.6s ease-out forwards;
+}
+
+.flash-notification.show {
+  transform: translateX(0);
+}
+
+.flash-notification.hide {
+  transform: translateX(120%);
+  opacity: 0;
+}
+
+/* Tipos de notificação */
+.flash-notification.success {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.9), rgba(22, 163, 74, 0.9));
+  color: #fff;
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.flash-notification.error {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.9), rgba(220, 38, 38, 0.9));
+  color: #fff;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.flash-notification.warning {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.9), rgba(217, 119, 6, 0.9));
+  color: #fff;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.flash-notification.info {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.9), rgba(37, 99, 235, 0.9));
+  color: #fff;
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+/* Ícone da notificação */
+.flash-notification .flash-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+/* Conteúdo da notificação */
+.flash-notification .flash-content {
+  flex: 1;
+}
+
+.flash-notification .flash-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 0.25rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.flash-notification .flash-message {
+  font-size: 0.85rem;
+  opacity: 0.95;
+  line-height: 1.4;
+}
+
+/* Botão de fechar */
+.flash-notification .flash-close {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.flash-notification .flash-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  opacity: 1;
+}
+
+/* Animações */
+@keyframes slideInBounce {
+  0% {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+  60% {
+    transform: translateX(-10px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOutSlide {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+}
+
+/* Barra de progresso para auto-dismiss */
+.flash-notification .flash-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 0 0 8px 8px;
+  animation: progressBar 4s linear forwards;
+}
+
+@keyframes progressBar {
+  0% { width: 100%; }
+  100% { width: 0%; }
+}
+
+/* Mobile responsivo */
+@media (max-width: 480px) {
+  .flash-notification {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    min-width: auto;
+    max-width: none;
+    transform: translateY(-120%);
+  }
+  
+  .flash-notification.show {
+    transform: translateY(0);
+  }
+  
+  .flash-notification.hide {
+    transform: translateY(-120%);
+  }
+  
+  @keyframes slideInBounce {
+    0% {
+      transform: translateY(-120%);
+      opacity: 0;
+    }
+    60% {
+      transform: translateY(10px);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+}
+
 /* Marks */
 mark {
   background: #4338ca;

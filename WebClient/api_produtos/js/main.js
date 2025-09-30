@@ -419,6 +419,69 @@ function setFeedback(msg, type='') {
   refs.feedback.textContent = msg;
 }
 
+// Sistema de notificação flash
+function showFlashNotification(title, message, type = 'info', duration = 4000) {
+  // Remove notificações anteriores
+  const existingNotifications = document.querySelectorAll('.flash-notification');
+  existingNotifications.forEach(notification => {
+    notification.remove();
+  });
+
+  // Cria a nova notificação
+  const notification = document.createElement('div');
+  notification.className = `flash-notification ${type}`;
+
+  // Define ícones para cada tipo
+  const icons = {
+    success: '✅',
+    error: '❌', 
+    warning: '⚠️',
+    info: 'ℹ️'
+  };
+
+  notification.innerHTML = `
+    <div class="flash-icon">${icons[type] || icons.info}</div>
+    <div class="flash-content">
+      <div class="flash-title">${title}</div>
+      <div class="flash-message">${message}</div>
+    </div>
+    <button class="flash-close" type="button">×</button>
+    <div class="flash-progress"></div>
+  `;
+
+  // Adiciona ao DOM
+  document.body.appendChild(notification);
+
+  // Mostra a notificação após um pequeno delay
+  setTimeout(() => {
+    notification.classList.add('show');
+  }, 100);
+
+  // Adiciona evento de fechar
+  const closeBtn = notification.querySelector('.flash-close');
+  closeBtn.addEventListener('click', () => {
+    hideFlashNotification(notification);
+  });
+
+  // Auto-remove após o tempo especificado
+  if (duration > 0) {
+    setTimeout(() => {
+      hideFlashNotification(notification);
+    }, duration);
+  }
+
+  return notification;
+}
+
+function hideFlashNotification(notification) {
+  notification.classList.add('hide');
+  setTimeout(() => {
+    if (notification.parentNode) {
+      notification.parentNode.removeChild(notification);
+    }
+  }, 400);
+}
+
 function setLoading(value, message='') {
   loading = value;
   if (value) setFeedback(message || 'Processando...');
@@ -438,11 +501,35 @@ async function loadProducts() {
     if (currentSearch.length > 0) {
       const searchType = /^\d+$/.test(currentSearch) ? 'código' : 'texto';
       setFeedback(`✅ Busca por ${searchType} atualizada: ${filtered.length} resultado(s) de ${allProducts.length} produtos.`, 'success');
+      
+      // Notificação flash para busca
+      showFlashNotification(
+        'Busca Realizada',
+        `${filtered.length} resultado(s) encontrado(s) para "${currentSearch}"`,
+        'info',
+        2500
+      );
     } else {
       setFeedback(`Carregado: ${allProducts.length} registros.`, 'success');
+      
+      // Notificação flash para carregamento inicial
+      showFlashNotification(
+        'Produtos Carregados',
+        `${allProducts.length} produtos carregados com sucesso!`,
+        'success',
+        2000
+      );
     }
   } catch (e) {
     setFeedback('Erro ao carregar: ' + e.message, 'error');
+    
+    // Notificação flash para erro de carregamento
+    showFlashNotification(
+      'Erro ao Carregar',
+      `Não foi possível carregar os produtos: ${e.message}`,
+      'error',
+      5000
+    );
   } finally {
     setLoading(false);
   }
@@ -823,10 +910,28 @@ async function handleInlineValidadeUpdate(prod, iso, editorEl) {
     prod._status = status;
     prod._dias = dias;
     setFeedback('Validade atualizada.', 'success');
+    
+    // Exibe notificação flash de sucesso
+    showFlashNotification(
+      'Validade Atualizada!',
+      `Produto ${prod.PRO_CODIGO} - Nova validade: ${br}`,
+      'success',
+      3000
+    );
+    
     applyFilters(false);
   } catch (e) {
     prod.PRO_VALIDADE = oldVal;
     setFeedback('Erro ao atualizar: ' + e.message, 'error');
+    
+    // Exibe notificação flash de erro
+    showFlashNotification(
+      'Erro na Atualização',
+      `Não foi possível atualizar a validade do produto ${prod.PRO_CODIGO}: ${e.message}`,
+      'error',
+      5000
+    );
+    
     editorEl.classList.remove('inline-loading');
   }
 }
