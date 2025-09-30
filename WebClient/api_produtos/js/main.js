@@ -23,6 +23,7 @@ let groupBy = '';
 let sortField = '';
 let sortDir = 'asc';
 let loading = false;
+let isUserTyping = false;
 
 const refs = {};
 function qs(id) { return document.getElementById(id); }
@@ -1116,11 +1117,27 @@ function bindEvents() {
   });
   
   let debounceId;
+  
+  refs.search.addEventListener('focus', () => {
+    isUserTyping = true;
+  });
+  
+  refs.search.addEventListener('blur', () => {
+    isUserTyping = false;
+  });
+  
   refs.search.addEventListener('input', () => {
     clearTimeout(debounceId);
+    isUserTyping = true;
     
     // Indicador visual imediato
     const searchValue = refs.search.value.trim();
+    
+    // Evitar loop infinito se o valor já é o mesmo
+    if (searchValue === currentSearch) {
+      return;
+    }
+    
     if (searchValue.length > 0) {
       refs.search.style.borderColor = 'var(--c-accent)';
       refs.search.style.backgroundColor = 'rgba(33, 150, 243, 0.1)';
@@ -1140,6 +1157,11 @@ function bindEvents() {
         // Se não há busca, aplicar filtros nos dados em cache
         applyFilters(false);
       }
+      
+      // Resetar flag após processamento
+      setTimeout(() => {
+        isUserTyping = false;
+      }, 100);
     }, 500); // 500ms para evitar muitas chamadas à API
   });
   
@@ -1275,7 +1297,10 @@ function toggleTheme(btn) {
 }
 
 function syncInputsFromState() {
-  if (refs.search) refs.search.value = currentSearch;
+  // Não sobrescrever o input de busca se o usuário estiver digitando ou se estiver focado
+  if (refs.search && !isUserTyping && document.activeElement !== refs.search) {
+    refs.search.value = currentSearch;
+  }
   if (refs.statusFilter) refs.statusFilter.value = currentStatusFilter;
   if (refs.filterGrupo) refs.filterGrupo.value = currentGrupo;
   if (refs.filterMarca) refs.filterMarca.value = currentMarca;
