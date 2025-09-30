@@ -794,7 +794,20 @@ function buildInlineEditor(prod) {
     container.replaceWith(buildInlineDateDisplay(prod));
   });
 
-  container.append(input, btnSave, btnCancel);
+  // Verificar se estamos em um card mobile (dentro de .pc-validade)
+  const isMobileCard = container.closest && container.closest('.pc-validade');
+  
+  if (window.innerWidth <= 760) {
+    // Mobile: criar container para botões ficarem lado a lado abaixo do input
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'button-container';
+    buttonContainer.append(btnSave, btnCancel);
+    container.append(input, buttonContainer);
+  } else {
+    // Desktop: manter layout original (lado a lado)
+    container.append(input, btnSave, btnCancel);
+  }
+
   return container;
 }
 

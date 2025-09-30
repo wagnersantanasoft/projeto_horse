@@ -564,11 +564,13 @@ tr.status-VENCIDO:hover { background: #4a1818; }
 .inline-date-display button {
   background: #374151;
   border: 1px solid #475564;
-  padding: .22rem .38rem;
-  font-size: .6rem;
+  padding: .35rem .55rem;
+  font-size: .75rem;
   line-height: 1;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 6px;
+  min-width: 42px;
+  min-height: 32px;
 }
 .inline-date-display button:hover {
   background: var(--c-accent);
@@ -579,6 +581,10 @@ tr.status-VENCIDO:hover { background: #4a1818; }
   background: #e2e8f0;
   border: 1px solid #cbd5e1;
   color: #1f2933;
+  padding: .35rem .55rem;
+  font-size: .75rem;
+  min-width: 42px;
+  min-height: 32px;
 }
 :root[data-theme='light'] .inline-date-display button:hover {
   background: var(--c-accent);
@@ -594,17 +600,21 @@ tr.status-VENCIDO:hover { background: #4a1818; }
 .inline-date-editor input[type=date] {
   background: #1f2730;
   border: 1px solid #34414f;
-  border-radius: 4px;
-  padding: .22rem .3rem;
+  border-radius: 6px;
+  padding: .4rem .5rem;
   font: inherit;
   color: var(--c-text);
-  width: 130px;
-  font-size: .7rem;
+  width: 160px;
+  font-size: .85rem;
+  min-height: 36px;
 }
 :root[data-theme='light'] .inline-date-editor input[type=date] {
   background: #ffffff;
   border: 1px solid #cbd5e1;
   color: #1f2933;
+  padding: .4rem .5rem;
+  font-size: .85rem;
+  min-height: 36px;
 }
 .inline-date-editor input[type=date]:focus {
   outline: 1px solid var(--c-accent);
@@ -614,23 +624,70 @@ tr.status-VENCIDO:hover { background: #4a1818; }
 .inline-date-editor .act {
   background: #374151;
   border: 1px solid #475564;
-  padding: .22rem .36rem;
-  font-size: .6rem;
+  padding: .35rem .55rem;
+  font-size: .75rem;
   line-height: 1;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 6px;
+  min-width: 42px;
+  min-height: 32px;
+  transition: all .2s ease;
 }
-.inline-date-editor .act:hover {
-  background: var(--c-accent);
-  border-color: var(--c-accent);
+
+/* Botão de confirmar (✔) - Verde */
+.inline-date-editor .act[title="Salvar"] {
+  background: var(--c-ok);
+  border-color: var(--c-ok);
+  color: #fff;
+}
+.inline-date-editor .act[title="Salvar"]:hover {
+  background: #16a34a;
+  border-color: #16a34a;
+  color: #fff;
+}
+
+/* Botão de cancelar (↺) - Vermelho */
+.inline-date-editor .act[title="Cancelar"] {
+  background: var(--c-danger);
+  border-color: var(--c-danger);
+  color: #fff;
+}
+.inline-date-editor .act[title="Cancelar"]:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #fff;
 }
 :root[data-theme='light'] .inline-date-editor .act {
   background: #e2e8f0;
   border-color: #c2ced8;
   color: #1f2933;
+  padding: .35rem .55rem;
+  font-size: .75rem;
+  min-width: 42px;
+  min-height: 32px;
 }
-:root[data-theme='light'] .inline-date-editor .act:hover {
-  background: var(--c-accent);
+
+/* Tema claro - Botão de confirmar (✔) - Verde */
+:root[data-theme='light'] .inline-date-editor .act[title="Salvar"] {
+  background: var(--c-ok);
+  border-color: var(--c-ok);
+  color: #fff;
+}
+:root[data-theme='light'] .inline-date-editor .act[title="Salvar"]:hover {
+  background: #16a34a;
+  border-color: #16a34a;
+  color: #fff;
+}
+
+/* Tema claro - Botão de cancelar (↺) - Vermelho */
+:root[data-theme='light'] .inline-date-editor .act[title="Cancelar"] {
+  background: var(--c-danger);
+  border-color: var(--c-danger);
+  color: #fff;
+}
+:root[data-theme='light'] .inline-date-editor .act[title="Cancelar"]:hover {
+  background: #dc2626;
+  border-color: #dc2626;
   color: #fff;
 }
 
@@ -929,8 +986,62 @@ th, td {
 }
 .pc-validade .inline-date-display button {
   margin-left: .1em;
-  padding: .2em .52em;
-  font-size: var(--card-date-btn-font);
+  padding: .3em .6em;
+  font-size: .85rem;
+  min-width: 44px;
+  min-height: 36px;
+}
+
+/* Mobile - Botões de edição de data com cores específicas */
+.pc-validade .inline-date-editor {
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+  align-items: stretch;
+}
+
+.pc-validade .inline-date-editor input[type=date] {
+  width: 100%;
+  margin-bottom: .2rem;
+  padding: .5rem .6rem;
+  font-size: .9rem;
+  min-height: 42px;
+  border-radius: 8px;
+}
+
+/* Container para os botões ficarem lado a lado */
+.pc-validade .inline-date-editor .button-container {
+  display: flex;
+  gap: .4rem;
+  justify-content: space-between;
+}
+
+.pc-validade .inline-date-editor .act {
+  padding: .3em .6em;
+  font-size: .85rem;
+  min-width: 44px;
+  min-height: 36px;
+  flex: 1;
+}
+
+.pc-validade .inline-date-editor .act[title="Salvar"] {
+  background: var(--c-ok);
+  border-color: var(--c-ok);
+  color: #fff;
+}
+.pc-validade .inline-date-editor .act[title="Salvar"]:hover {
+  background: #16a34a;
+  border-color: #16a34a;
+}
+
+.pc-validade .inline-date-editor .act[title="Cancelar"] {
+  background: var(--c-danger);
+  border-color: var(--c-danger);
+  color: #fff;
+}
+.pc-validade .inline-date-editor .act[title="Cancelar"]:hover {
+  background: #dc2626;
+  border-color: #dc2626;
 }
 /* ESTOQUE COM UNIDADE */
 .meta-estoque {
