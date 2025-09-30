@@ -15,7 +15,7 @@ let filtered = [];
 let currentPage = 1;
 let currentSearch = '';
 let daysThreshold = 30;
-let currentStatusFilter = 'ALERTA';
+let currentStatusFilter = '';
 let currentGrupo = '';
 let currentMarca = '';
 let estoquePositivo = false;
@@ -23,6 +23,7 @@ let groupBy = '';
 let sortField = '';
 let sortDir = 'asc';
 let loading = false;
+let isUserTyping = false;
 
 const refs = {};
 function qs(id) { return document.getElementById(id); }
@@ -186,6 +187,7 @@ function saveState() {
     groupBy,
     sortField,
     sortDir,
+    estoquePositivo,
     theme: document.documentElement.getAttribute('data-theme')
   };
   localStorage.setItem(storageKey('prefs'), JSON.stringify(state));
@@ -208,8 +210,8 @@ function loadState() {
     
     currentSearch = s.search ?? '';
     
-    // Garantir que sempre use valores padrão se não houver dados válidos salvos
-    currentStatusFilter = s.status && s.status !== '' ? s.status : 'ALERTA';
+    // Carregar status salvo pelo usuário (sem forçar padrão fixo)
+    currentStatusFilter = s.status ?? '';
     daysThreshold = s.days && s.days > 0 ? s.days : 30;
     
     console.log('Valores após loadState: Status =', currentStatusFilter, ', Dias =', daysThreshold);
@@ -217,6 +219,7 @@ function loadState() {
     currentGrupo = s.grupo ?? '';
     currentMarca = s.marca ?? '';
     groupBy = s.groupBy ?? '';
+    estoquePositivo = s.estoquePositivo ?? false;
     sortField = s.sortField ?? '';
     sortDir = s.sortDir ?? 'asc';
       // if no saved sortField, prefer status-priority
@@ -310,24 +313,26 @@ function initFontSizeControl() {
   refs.openDrawer = document.getElementById('open-drawer');
   refs.orderByBtnMobile = document.getElementById('order-by-btn-mobile');
   refs.daysThreshold = document.getElementById('days-threshold');
-  refs.reloadBtn = document.getElementById('reload-btn');
   refs.themeToggle = document.getElementById('theme-toggle');
   refs.logoutBtnMobile = document.getElementById('logout-btn-mobile');
+  refs.settingsBtnMobile = document.getElementById('settings-btn-mobile');
   // Desktop controls
   refs.openDrawerDesktop = document.getElementById('open-drawer-desktop');
-  refs.daysThresholdDesktop = document.getElementById('days-threshold-desktop');
-  refs.reloadBtnDesktop = document.getElementById('reload-btn-desktop');
-  refs.themeToggleDesktop = document.getElementById('theme-toggle-desktop');
   refs.logoutBtnDesktop = document.getElementById('logout-btn-desktop');
+  refs.settingsBtnDesktop = document.getElementById('settings-btn-desktop');
   // Shared
   refs.tbody = document.getElementById('product-tbody');
   refs.cardsContainer = document.getElementById('cards-container');
   refs.feedback = document.getElementById('feedback');
   refs.search = document.getElementById('search');
-  refs.clearSearch = document.getElementById('clear-search');
   refs.drawer = document.getElementById('filter-drawer');
   refs.closeDrawer = document.getElementById('close-drawer');
   refs.drawerBackdrop = document.getElementById('drawer-backdrop');
+  // Settings modal
+  refs.settingsModal = document.getElementById('settings-modal');
+  refs.closeSettings = document.getElementById('close-settings');
+  refs.themeToggleModal = document.getElementById('theme-toggle-modal');
+  refs.themeLabel = document.getElementById('theme-label');
   refs.applyFiltersBtn = document.getElementById('apply-filters');
   refs.statusFilter = document.getElementById('status-filter');
   refs.filterGrupo = document.getElementById('filter-grupo');
@@ -335,7 +340,38 @@ function initFontSizeControl() {
   refs.groupBy = document.getElementById('group-by');
   refs.pagination = document.getElementById('pagination');
   refs.btnVoice = document.getElementById('btn-voice');
-  refs.btnCamera = document.getElementById('btn-camera');
+  refs.btnCameraMobile = document.getElementById('btn-camera-mobile');
+  refs.btnCameraDesktop = document.getElementById('btn-camera-desktop');
+  
+  // Debug dos botões da câmera
+  console.log('Botões da câmera encontrados:', {
+    mobile: {
+      element: refs.btnCameraMobile,
+      id: refs.btnCameraMobile?.id,
+      disabled: refs.btnCameraMobile?.disabled,
+      classList: refs.btnCameraMobile ? Array.from(refs.btnCameraMobile.classList) : null
+    },
+    desktop: {
+      element: refs.btnCameraDesktop,
+      id: refs.btnCameraDesktop?.id,
+      disabled: refs.btnCameraDesktop?.disabled,
+      classList: refs.btnCameraDesktop ? Array.from(refs.btnCameraDesktop.classList) : null
+    }
+  });
+  
+  // Teste de clique direto para ambos os botões
+  if (refs.btnCameraMobile) {
+    refs.btnCameraMobile.addEventListener('click', (e) => {
+      console.log('Clique direto detectado no botão da câmera mobile:', e);
+    }, true); // Captura na fase de captura
+  }
+  
+  if (refs.btnCameraDesktop) {
+    refs.btnCameraDesktop.addEventListener('click', (e) => {
+      console.log('Clique direto detectado no botão da câmera desktop:', e);
+    }, true); // Captura na fase de captura
+  }
+  
   refs.orderByBtn = document.getElementById('order-by-btn');
   refs.cameraOverlay = document.getElementById('camera-overlay');
   refs.cameraVideo = document.getElementById('camera-video');
@@ -411,6 +447,69 @@ function setFeedback(msg, type='') {
   refs.feedback.textContent = msg;
 }
 
+// Sistema de notificação flash
+function showFlashNotification(title, message, type = 'info', duration = 4000) {
+  // Remove notificações anteriores
+  const existingNotifications = document.querySelectorAll('.flash-notification');
+  existingNotifications.forEach(notification => {
+    notification.remove();
+  });
+
+  // Cria a nova notificação
+  const notification = document.createElement('div');
+  notification.className = `flash-notification ${type}`;
+
+  // Define ícones para cada tipo
+  const icons = {
+    success: '✅',
+    error: '❌', 
+    warning: '⚠️',
+    info: 'ℹ️'
+  };
+
+  notification.innerHTML = `
+    <div class="flash-icon">${icons[type] || icons.info}</div>
+    <div class="flash-content">
+      <div class="flash-title">${title}</div>
+      <div class="flash-message">${message}</div>
+    </div>
+    <button class="flash-close" type="button">×</button>
+    <div class="flash-progress"></div>
+  `;
+
+  // Adiciona ao DOM
+  document.body.appendChild(notification);
+
+  // Mostra a notificação após um pequeno delay
+  setTimeout(() => {
+    notification.classList.add('show');
+  }, 100);
+
+  // Adiciona evento de fechar
+  const closeBtn = notification.querySelector('.flash-close');
+  closeBtn.addEventListener('click', () => {
+    hideFlashNotification(notification);
+  });
+
+  // Auto-remove após o tempo especificado
+  if (duration > 0) {
+    setTimeout(() => {
+      hideFlashNotification(notification);
+    }, duration);
+  }
+
+  return notification;
+}
+
+function hideFlashNotification(notification) {
+  notification.classList.add('hide');
+  setTimeout(() => {
+    if (notification.parentNode) {
+      notification.parentNode.removeChild(notification);
+    }
+  }, 400);
+}
+
 function setLoading(value, message='') {
   loading = value;
   if (value) setFeedback(message || 'Processando...');
@@ -425,9 +524,39 @@ async function loadProducts() {
     buildMarcaGrupoOptions();
     syncInputsFromState();
     applyFilters(false);
-    setFeedback(`Carregado: ${allProducts.length} registros.`, 'success');
+    
+    // Feedback específico para busca vs carregamento inicial
+    if (currentSearch.length > 0) {
+      const searchType = /^\d+$/.test(currentSearch) ? 'código' : 'texto';
+      setFeedback(`✅ Busca por ${searchType} atualizada: ${filtered.length} resultado(s) de ${allProducts.length} produtos.`, 'success');
+    } else {
+      setFeedback(`Carregado: ${allProducts.length} registros.`, 'success');
+    }
   } catch (e) {
     setFeedback('Erro ao carregar: ' + e.message, 'error');
+    
+    // (Não exibe flash para erro de busca/carregamento)
+  } finally {
+    setLoading(false);
+  }
+}
+
+// Função específica para busca em tempo real (opcional)
+async function searchProducts() {
+  if (currentSearch.length === 0) {
+    applyFilters(false);
+    return;
+  }
+  
+  setLoading(true, 'Buscando...');
+  try {
+    // Recarregar dados da API para ter informações atualizadas
+    allProducts = await productService.listAll();
+    computeAllStatuses();
+    applyFilters(false);
+    setFeedback(`🔍 Busca concluída: ${filtered.length} resultados encontrados.`, 'success');
+  } catch (e) {
+    setFeedback('Erro na busca: ' + e.message, 'error');
   } finally {
     setLoading(false);
   }
@@ -445,10 +574,19 @@ function buildMarcaGrupoOptions() {
   const marcas = Array.from(new Set(allProducts.map(p => p.MAR_DESCRI).filter(Boolean))).sort();
   const grupos = Array.from(new Set(allProducts.map(p => p.GP_DESCRI).filter(Boolean))).sort();
 
-  refs.filterMarca.innerHTML = '<option value="">Todas</option>' +
-    marcas.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
-  refs.filterGrupo.innerHTML = '<option value="">Todos</option>' +
-    grupos.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');
+  // Popular datalist de marcas
+  const marcasList = document.getElementById('marcas-list');
+  if (marcasList) {
+    marcasList.innerHTML = '<option value="">Todas</option>' +
+      marcas.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+  }
+
+  // Popular datalist de grupos
+  const gruposList = document.getElementById('grupos-list');
+  if (gruposList) {
+    gruposList.innerHTML = '<option value="">Todos</option>' +
+      grupos.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');
+  }
 }
 
 function escapeHtml(str) {
@@ -462,13 +600,7 @@ function applyFilters(recalcStatus = true) {
   filtered = allProducts.filter(p => {
     // Filtro de estoque positivo
     if (estoquePositivo && Number(p.PRO_ESTOQ1) <= 0) return false;
-    // Evento para filtro de estoque positivo
-    if (refs.estoquePositivo) {
-      refs.estoquePositivo.onchange = function(e) {
-        estoquePositivo = e.target.checked;
-        applyFilters();
-      };
-    }
+    
     // Filtro por status
     if (currentStatusFilter === 'ALERTA') {
       if (!(p._status === 'ALERTA' && p._dias >= 0 && p._dias <= daysThreshold)) return false;
@@ -655,7 +787,7 @@ function renderCard(prod) {
   const statusValidadeRow = document.createElement('div');
   statusValidadeRow.style.display = 'flex';
   statusValidadeRow.style.alignItems = 'center';
-  statusValidadeRow.style.gap = '10px';
+  statusValidadeRow.style.gap = '6px';
 
   const statusDiv = document.createElement('div');
   statusDiv.className = 'pc-status';
@@ -672,25 +804,31 @@ function renderCard(prod) {
   // Título
   const title = document.createElement('div');
   title.className = 'pc-title';
-  title.style.marginTop = '2px';
+  title.style.marginTop = '0px';
   title.innerHTML = highlight(prod.PRO_NOME, currentSearch);
 
   // Grid de metadados
   const meta = document.createElement('div');
   meta.className = 'meta-grid';
+  
+  // Criar elemento de preços com preço 1 e preço 2 abaixo
+  let precosHTML = `<span class="meta-label">PREÇO</span>R$ ${formatNum(prod.PRO_PRECO1)}`;
+  
+  // Verifica se preço 2 existe e é maior que 0
+  if (prod.PRO_PRECO2 && parseFloat(prod.PRO_PRECO2) > 0) {
+    precosHTML += `<br>R$ ${formatNum(prod.PRO_PRECO2)}`;
+  }
+  
   meta.innerHTML = `
     <span><span class="meta-label">CÓD</span>${escapeHtml(prod.PRO_CODIGO)}</span>
-    <span><span class="meta-label">CÓD. BARRA</span>${escapeHtml(prod.PRO_COD_BARRA)}</span>
-    <span class="meta-grupo"><span class="meta-label">GRUPO</span>${escapeHtml(prod.GP_DESCRI)}</span>
-    <span><span class="meta-label">PREÇO 1</span>${formatNum(prod.PRO_PRECO1)}</span>
-    <span><span class="meta-label">PREÇO 2</span>${formatNum(prod.PRO_PRECO2)}</span>
-    <span class="meta-marca"><span class="meta-label">MARCA</span>${escapeHtml(prod.MAR_DESCRI) || '-'}</span>
+    <span>${precosHTML}</span>
     <span class="meta-estoque">
       <span class="meta-label">ESTOQUE</span>
-      <span style="display: flex; align-items: baseline; gap: 0.22em;">
-        <span class="estoque-valor">${formatNum(prod.PRO_ESTOQ1)} ${escapeHtml(prod.UND_NOME)}</span>
-      </span>
+      <span class="estoque-valor">${formatNum(prod.PRO_ESTOQ1)} ${escapeHtml(prod.UND_NOME) || 'UN'}</span>
     </span>
+    <span><span class="meta-label">CÓD. BARRA</span>${escapeHtml(prod.PRO_COD_BARRA)}</span>
+    <span class="meta-marca"><span class="meta-label">MARCA</span>${escapeHtml(prod.MAR_DESCRI) || '-'}</span>
+    <span class="meta-grupo"><span class="meta-label">GRUPO</span>${escapeHtml(prod.GP_DESCRI)}</span>
   `;
 
   card.append(statusValidadeRow, title, meta);
@@ -749,7 +887,20 @@ function buildInlineEditor(prod) {
     container.replaceWith(buildInlineDateDisplay(prod));
   });
 
-  container.append(input, btnSave, btnCancel);
+  // Verificar se estamos em um card mobile (dentro de .pc-validade)
+  const isMobileCard = container.closest && container.closest('.pc-validade');
+  
+  if (window.innerWidth <= 760) {
+    // Mobile: criar container para botões ficarem lado a lado abaixo do input
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'button-container';
+    buttonContainer.append(btnSave, btnCancel);
+    container.append(input, buttonContainer);
+  } else {
+    // Desktop: manter layout original (lado a lado)
+    container.append(input, btnSave, btnCancel);
+  }
+
   return container;
 }
 
@@ -765,10 +916,28 @@ async function handleInlineValidadeUpdate(prod, iso, editorEl) {
     prod._status = status;
     prod._dias = dias;
     setFeedback('Validade atualizada.', 'success');
+    
+    // Exibe notificação flash de sucesso
+    showFlashNotification(
+      'Validade Atualizada!',
+      `Produto ${prod.PRO_CODIGO} - Nova validade: ${br}`,
+      'success',
+      3000
+    );
+    
     applyFilters(false);
   } catch (e) {
     prod.PRO_VALIDADE = oldVal;
     setFeedback('Erro ao atualizar: ' + e.message, 'error');
+    
+    // Exibe notificação flash de erro
+    showFlashNotification(
+      'Erro na Atualização',
+      `Não foi possível atualizar a validade do produto ${prod.PRO_CODIGO}: ${e.message}`,
+      'error',
+      5000
+    );
+    
     editorEl.classList.remove('inline-loading');
   }
 }
@@ -822,9 +991,25 @@ function closeDrawer() {
   document.body.style.overflow = '';
 }
 
+/* Settings Modal */
+function openSettings() {
+  refs.settingsModal.hidden = false;
+  document.body.style.overflow = 'hidden';
+  updateThemeLabel();
+}
+function closeSettings() {
+  refs.settingsModal.hidden = true;
+  document.body.style.overflow = '';
+}
+function updateThemeLabel() {
+  if (refs.themeLabel) {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    refs.themeLabel.textContent = isDark ? 'Escuro' : 'Claro';
+  }
+}
+
 function bindEvents() {
   // Mobile
-  refs.reloadBtn?.addEventListener('click', () => loadProducts());
   refs.daysThreshold?.addEventListener('change', () => {
     const v = Number(refs.daysThreshold.value);
     if (v > 0) {
@@ -836,22 +1021,22 @@ function bindEvents() {
   });
   refs.themeToggle?.addEventListener('click', () => toggleTheme(refs.themeToggle));
   refs.logoutBtnMobile?.addEventListener('click', logout);
+  refs.settingsBtnMobile?.addEventListener('click', openSettings);
   refs.openDrawer?.addEventListener('click', openDrawer);
 
   // Desktop
-  refs.reloadBtnDesktop?.addEventListener('click', () => loadProducts());
-  refs.daysThresholdDesktop?.addEventListener('change', () => {
-    const v = Number(refs.daysThresholdDesktop.value);
-    if (v > 0) {
-      daysThreshold = v;
-      computeAllStatuses();
-      applyFilters(false);
-      saveState();
+  refs.logoutBtnDesktop?.addEventListener('click', logout);
+  refs.settingsBtnDesktop?.addEventListener('click', openSettings);
+  refs.openDrawerDesktop?.addEventListener('click', openDrawer);
+
+  // Settings modal
+  refs.closeSettings?.addEventListener('click', closeSettings);
+  refs.themeToggleModal?.addEventListener('click', () => toggleTheme(refs.themeToggleModal));
+  refs.settingsModal?.addEventListener('click', (e) => {
+    if (e.target === refs.settingsModal || e.target.classList.contains('modal-backdrop')) {
+      closeSettings();
     }
   });
-  refs.themeToggleDesktop?.addEventListener('click', () => toggleTheme(refs.themeToggleDesktop));
-  refs.logoutBtnDesktop?.addEventListener('click', logout);
-  refs.openDrawerDesktop?.addEventListener('click', openDrawer);
 
   // Shared
   refs.closeDrawer.addEventListener('click', closeDrawer);
@@ -870,32 +1055,94 @@ function bindEvents() {
     currentStatusFilter = refs.statusFilter.value;
     applyFilters();
   });
+  
+  // Eventos para grupo com busca digitável
   refs.filterGrupo?.addEventListener('change', () => {
     currentGrupo = refs.filterGrupo.value;
     applyFilters();
   });
+  refs.filterGrupo?.addEventListener('input', () => {
+    clearTimeout(debounceId);
+    debounceId = setTimeout(() => {
+      currentGrupo = refs.filterGrupo.value;
+      applyFilters();
+    }, 300);
+  });
+  
+  // Eventos para marca com busca digitável
   refs.filterMarca?.addEventListener('change', () => {
     currentMarca = refs.filterMarca.value;
     applyFilters();
   });
+  refs.filterMarca?.addEventListener('input', () => {
+    clearTimeout(debounceId);
+    debounceId = setTimeout(() => {
+      currentMarca = refs.filterMarca.value;
+      applyFilters();
+    }, 300);
+  });
+  
   refs.groupBy?.addEventListener('change', () => {
     groupBy = refs.groupBy.value;
     applyFilters();
   });
-  refs.clearSearch.addEventListener('click', () => {
-    refs.search.value = '';
-    currentSearch = '';
-    applyFilters(false);
-    refs.search.focus();
+  
+  // Evento para checkbox de estoque positivo
+  refs.estoquePositivo?.addEventListener('change', () => {
+    estoquePositivo = refs.estoquePositivo.checked;
+    applyFilters();
+    saveState();
   });
+  
   let debounceId;
+  
+  refs.search.addEventListener('focus', () => {
+    isUserTyping = true;
+  });
+  
+  refs.search.addEventListener('blur', () => {
+    isUserTyping = false;
+  });
+  
   refs.search.addEventListener('input', () => {
     clearTimeout(debounceId);
+    isUserTyping = true;
+    
+    // Indicador visual imediato
+    const searchValue = refs.search.value.trim();
+    
+    // Evitar loop infinito se o valor já é o mesmo
+    if (searchValue === currentSearch) {
+      return;
+    }
+    
+    if (searchValue.length > 0) {
+      refs.search.style.borderColor = 'var(--c-accent)';
+      refs.search.style.backgroundColor = 'rgba(33, 150, 243, 0.1)';
+    } else {
+      refs.search.style.borderColor = '';
+      refs.search.style.backgroundColor = '';
+    }
+    
     debounceId = setTimeout(() => {
-      currentSearch = refs.search.value.trim();
-      applyFilters(false);
-    }, 220);
+      currentSearch = searchValue;
+      
+      // Se há busca, recarregar dados da API para ter informações atualizadas
+      if (currentSearch.length > 0) {
+        setFeedback('🔍 Buscando dados atualizados na API...', 'info');
+        loadProducts(); // Recarregar da API
+      } else {
+        // Se não há busca, aplicar filtros nos dados em cache
+        applyFilters(false);
+      }
+      
+      // Resetar flag após processamento
+      setTimeout(() => {
+        isUserTyping = false;
+      }, 100);
+    }, 500); // 500ms para evitar muitas chamadas à API
   });
+  
   refs.table.querySelector('thead').addEventListener('click', handleHeaderClick);
 
   initVoiceSearch({
@@ -931,16 +1178,50 @@ function bindEvents() {
   });
 
   initBarcodeScanner({
-    openButton: refs.btnCamera,
+    openButtonMobile: refs.btnCameraMobile,
+    openButtonDesktop: refs.btnCameraDesktop,
     closeButton: refs.closeCamera,
     overlay: refs.cameraOverlay,
     video: refs.cameraVideo,
     statusEl: refs.cameraStatus,
-    onCode: (code) => {
-      refs.search.value = code;
-      currentSearch = code;
-      applyFilters(false);
-      refs.search.focus();
+    onCode: async (code) => {
+      showFlashNotification(`Código escaneado: ${code}`, 'success');
+      
+      try {
+        // Busca específica por código de barras
+        showFlashNotification('Buscando produto...', 'info');
+        
+        const response = await fetch(`${API_BASE_URL}/produtos?search=${encodeURIComponent(code)}`);
+        
+        if (!response.ok) {
+          throw new Error(`Erro na busca: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.data && data.data.length > 0) {
+          // Produto encontrado
+          await displayProducts(data.data, data.current_page, data.last_page);
+          showFlashNotification(`Produto encontrado: ${data.data[0].nome}`, 'success');
+        } else {
+          // Produto não encontrado, fazer busca normal
+          refs.search.value = code;
+          currentSearch = code;
+          applyFilters(false);
+          showFlashNotification('Produto não encontrado por código. Fazendo busca geral...', 'warning');
+        }
+        
+        refs.search.focus();
+        
+      } catch (error) {
+        console.error('Erro ao buscar produto:', error);
+        // Fallback para busca normal
+        refs.search.value = code;
+        currentSearch = code;
+        applyFilters(false);
+        refs.search.focus();
+        showFlashNotification('Erro na busca específica. Fazendo busca geral...', 'error');
+      }
     }
   });
 
@@ -949,6 +1230,8 @@ function bindEvents() {
       if (!refs.cameraOverlay.hidden) {
         const evt = new Event('click');
         refs.closeCamera.dispatchEvent(evt);
+      } else if (!refs.settingsModal.hidden) {
+        closeSettings();
       } else if (refs.drawer.classList.contains('open')) {
         closeDrawer();
       }
@@ -984,24 +1267,30 @@ function toggleTheme(btn) {
   btn.textContent = current === 'light' ? '🌙' : '☀️';
   saveTheme(current);
   saveState();
-  // Sincroniza símbolo no outro botão
+  // Sincroniza símbolo nos outros botões
   if (refs.themeToggle && refs.themeToggle !== btn) refs.themeToggle.textContent = btn.textContent;
-  if (refs.themeToggleDesktop && refs.themeToggleDesktop !== btn) refs.themeToggleDesktop.textContent = btn.textContent;
+  if (refs.themeToggleModal && refs.themeToggleModal !== btn) refs.themeToggleModal.textContent = btn.textContent;
+  // Atualiza label no modal de configurações
+  updateThemeLabel();
 }
 
 function syncInputsFromState() {
-  if (refs.search) refs.search.value = currentSearch;
+  // Não sobrescrever o input de busca se o usuário estiver digitando ou se estiver focado
+  if (refs.search && !isUserTyping && document.activeElement !== refs.search) {
+    refs.search.value = currentSearch;
+  }
   if (refs.statusFilter) refs.statusFilter.value = currentStatusFilter;
   if (refs.filterGrupo) refs.filterGrupo.value = currentGrupo;
   if (refs.filterMarca) refs.filterMarca.value = currentMarca;
   if (refs.groupBy) refs.groupBy.value = groupBy;
+  // Sincroniza checkbox de estoque positivo
+  if (refs.estoquePositivo) refs.estoquePositivo.checked = estoquePositivo;
   // Sincroniza ambos inputs de dias
   if (refs.daysThreshold) refs.daysThreshold.value = daysThreshold;
-  if (refs.daysThresholdDesktop) refs.daysThresholdDesktop.value = daysThreshold;
-  // Sincroniza ambos botões de tema
+  // Sincroniza botões de tema
   const themeSymbol = document.documentElement.getAttribute('data-theme') === 'light' ? '🌙' : '☀️';
   if (refs.themeToggle) refs.themeToggle.textContent = themeSymbol;
-  if (refs.themeToggleDesktop) refs.themeToggleDesktop.textContent = themeSymbol;
+  if (refs.themeToggleModal) refs.themeToggleModal.textContent = themeSymbol;
 }
 
 function init() {

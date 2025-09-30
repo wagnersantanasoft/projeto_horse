@@ -26,6 +26,7 @@ export const productService = {
   async updateValidade(id, validadeBr) {
     return apiClient.put(`${CONFIG.ENDPOINT_PRODUCTS}/${id}`, {
       pro_validade: validadeBr
+      
     });
   }
 };

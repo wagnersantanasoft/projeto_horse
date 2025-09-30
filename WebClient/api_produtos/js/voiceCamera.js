@@ -1,4 +1,4 @@
-/* voiceCamera.js – scanner reforçado */
+/* voiceCamera.js – scanner reforçado com QuaggaJS */
 export function initVoiceSearch({ button, input, onResult }) {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
@@ -29,20 +29,47 @@ export function initVoiceSearch({ button, input, onResult }) {
   return { stop: () => recognition.stop() };
 }
 
+// Função para carregar QuaggaJS dinamicamente
+async function loadQuaggaJS() {
+  if (window.Quagga) return window.Quagga;
+  
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js';
+    script.onload = () => resolve(window.Quagga);
+    script.onerror = () => reject(new Error('Falha ao carregar QuaggaJS'));
+    document.head.appendChild(script);
+  });
+}
+
 export function initBarcodeScanner({
-  openButton,
+  openButtonMobile,
+  openButtonDesktop, 
   closeButton,
   overlay,
   video,
   statusEl,
   onCode,
   constrainFormats = [
-    'ean_13','ean_8','code_128','code_39','upc_e','upc_a',
-    'itf','codabar','qr_code','data_matrix','aztec','pdf417'
+    'code_128', 'ean_13', 'ean_8', 'code_39', 'code_39_vin',
+    'codabar', 'upc_a', 'upc_e', 'i2of5', '2of5', 'code_93'
   ],
   successBeep = true
 }) {
-  if (!openButton || !overlay || !video || !statusEl) {
+  console.log('[Barcode] Inicializando scanner com elementos:', {
+    openButtonMobile: !!openButtonMobile,
+    openButtonMobileId: openButtonMobile?.id,
+    openButtonDesktop: !!openButtonDesktop,
+    openButtonDesktopId: openButtonDesktop?.id,
+    overlay: !!overlay,
+    video: !!video,
+    statusEl: !!statusEl,
+    isSecure: location.protocol === 'https:' || location.hostname === 'localhost',
+    hasCamera: !!navigator.mediaDevices?.getUserMedia
+  });
+  
+  const openButtons = [openButtonMobile, openButtonDesktop].filter(Boolean);
+  if (openButtons.length === 0 || !overlay || !video || !statusEl) {
     console.warn('[Barcode] Elementos faltando.');
     return null;
   }
@@ -50,57 +77,145 @@ export function initBarcodeScanner({
 
   const isSecure = location.protocol === 'https:' || location.hostname === 'localhost';
   if (!isSecure) {
-    openButton.disabled = true;
-    openButton.title = 'Requer HTTPS ou localhost.';
+    openButtons.forEach(btn => {
+      btn.disabled = true;
+      btn.title = 'Requer HTTPS ou localhost.';
+    });
     statusEl.textContent = 'Contexto inseguro.';
     return null;
   }
   if (!navigator.mediaDevices?.getUserMedia) {
-    openButton.disabled = true;
-    openButton.title = 'Câmera não suportada.';
+    openButtons.forEach(btn => {
+      btn.disabled = true;
+      btn.title = 'Câmera não suportada.';
+    });
     statusEl.textContent = 'Sem suporte.';
     return null;
   }
 
-  let stream = null;
   let active = false;
-  let barcodeDetector = null;
   let scanning = false;
   let lastDetectedAt = 0;
+  let Quagga = null;
+  let initRequired = true;
 
-  async function initDetector() {
-    if ('BarcodeDetector' in window) {
-      try {
-        barcodeDetector = new window.BarcodeDetector({ formats: constrainFormats });
-      } catch {
-        barcodeDetector = null;
-      }
+  async function initQuagga() {
+    if (!initRequired) return;
+    initRequired = false;
+    
+    try {
+      Quagga = await loadQuaggaJS();
+      console.log('[Barcode] QuaggaJS carregado com sucesso');
+    } catch (error) {
+      console.error('[Barcode] Erro ao carregar QuaggaJS:', error);
+      statusEl.textContent = 'Erro ao carregar biblioteca de códigos';
+      return false;
     }
+    return true;
   }
 
   async function start() {
     if (!window.__USER_INTERACTED__) {
       console.warn('[Barcode] Bloqueado: sem gesto do usuário.');
-      return;
+      window.__USER_INTERACTED__ = true; // Força para desenvolvimento
     }
     if (active) return;
     active = true;
     overlay.hidden = false;
-    statusEl.textContent = 'Solicitando câmera...';
+    statusEl.textContent = 'Carregando scanner...';
+    
     try {
-      await initDetector();
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' } },
-        audio: false
+      const loaded = await initQuagga();
+      if (!loaded) {
+        active = false;
+        setTimeout(stop, 1500);
+        return;
+      }
+
+      statusEl.textContent = 'Iniciando câmera...';
+      
+      // Configuração do Quagga
+      Quagga.init({
+        inputStream: {
+          name: "Live",
+          type: "LiveStream",
+          target: video,
+          constraints: {
+            width: { min: 350, ideal: 640, max: 1280 },
+            height: { min: 240, ideal: 480, max: 720 },
+            aspectRatio: { min: 1, max: 2 },
+            facingMode: "environment" // Câmera traseira
+          }
+        },
+        locator: {
+          patchSize: "medium",
+          halfSample: true
+        },
+        numOfWorkers: 2,
+        frequency: 10, // Scan frequency
+        decoder: {
+          readers: constrainFormats.map(format => {
+            // Mapeia formatos para os suportados pelo Quagga
+            switch(format) {
+              case 'ean_13': return 'ean_reader';
+              case 'ean_8': return 'ean_8_reader';
+              case 'code_128': return 'code_128_reader';
+              case 'code_39': return 'code_39_reader';
+              case 'code_39_vin': return 'code_39_vin_reader';
+              case 'codabar': return 'codabar_reader';
+              case 'upc_a': case 'upc_e': return 'ean_reader';
+              case 'i2of5': return 'i2of5_reader';
+              case '2of5': return 'i2of5_reader';
+              case 'code_93': return 'code_93_reader';
+              default: return format;
+            }
+          }).filter((format, index, self) => self.indexOf(format) === index) // Remove duplicatas
+        },
+        locate: true
+      }, function(err) {
+        if (err) {
+          console.error('[Barcode] Erro na inicialização:', err);
+          statusEl.textContent = 'Erro: ' + (err.message || 'Falha na inicialização');
+          active = false;
+          setTimeout(stop, 2000);
+          return;
+        }
+        
+        console.log('[Barcode] Quagga inicializado com sucesso');
+        statusEl.textContent = 'Scanner ativo - Posicione o código de barras na área destacada';
+        scanning = true;
+        
+        // Configurar overlay visual
+        const cameraBox = overlay.querySelector('.camera-box');
+        if (cameraBox) {
+          cameraBox.classList.add('scanning');
+        }
+        
+        Quagga.start();
       });
-      video.srcObject = stream;
-      await video.play();
-      statusEl.textContent = barcodeDetector
-        ? 'Aponte o código ao centro.'
-        : 'Sem API nativa (adicione biblioteca externa).';
-      scanning = true;
-      requestAnimationFrame(scanLoop);
+
+      // Event listener para detecção de código
+      Quagga.onDetected(function(result) {
+        if (!scanning || !active) return;
+        
+        const code = result.codeResult.code;
+        const now = Date.now();
+        
+        // Evita detecções muito próximas
+        if (now - lastDetectedAt > 1500) {
+          lastDetectedAt = now;
+          console.log('[Barcode] Código detectado:', code);
+          statusEl.textContent = 'Código: ' + code;
+          beep();
+          onCode && onCode(code);
+          setTimeout(() => {
+            stop();
+          }, 800);
+        }
+      });
+
     } catch (err) {
+      console.error('[Barcode] Erro no start:', err);
       statusEl.textContent = 'Erro: ' + err.message;
       active = false;
       setTimeout(stop, 1500);
@@ -108,12 +223,24 @@ export function initBarcodeScanner({
   }
 
   function stop() {
+    console.log('[Barcode] Parando scanner...');
     scanning = false;
     active = false;
     overlay.hidden = true;
-    if (stream) {
-      stream.getTracks().forEach(t => t.stop());
-      stream = null;
+    
+    // Remover indicadores visuais
+    const cameraBox = overlay.querySelector('.camera-box');
+    if (cameraBox) {
+      cameraBox.classList.remove('scanning');
+    }
+    
+    if (Quagga && typeof Quagga.stop === 'function') {
+      try {
+        Quagga.stop();
+        console.log('[Barcode] Quagga parado');
+      } catch (err) {
+        console.warn('[Barcode] Erro ao parar Quagga:', err);
+      }
     }
   }
 
@@ -133,35 +260,48 @@ export function initBarcodeScanner({
         o.stop();
         ctx.close();
       }, 200);
-    } catch {}
-  }
-
-  async function scanLoop() {
-    if (!scanning || !active) return;
-    if (barcodeDetector) {
-      try {
-        const codes = await barcodeDetector.detect(video);
-        if (codes.length > 0) {
-          const value = codes[0].rawValue;
-          const now = Date.now();
-          if (now - lastDetectedAt > 900) {
-            lastDetectedAt = now;
-            statusEl.textContent = 'Código: ' + value;
-            beep();
-            onCode && onCode(value);
-            setTimeout(stop, 600);
-            return;
-          }
-        }
-      } catch {
-        // silencioso
-      }
+    } catch (err) {
+      console.warn('[Barcode] Erro no beep:', err);
     }
-    requestAnimationFrame(scanLoop);
   }
 
-  openButton.addEventListener('click', () => start());
-  closeButton?.addEventListener('click', () => stop());
+  // Eventos para desktop e mobile
+  const handleButtonClick = (event) => {
+    console.log('[Barcode] Botão ativado - Tipo:', event.type, 'Event:', event);
+    console.log('[Barcode] Botão estado:', {
+      disabled: openButton.disabled,
+      style: openButton.style.cssText,
+      classList: Array.from(openButton.classList)
+    });
+    
+    // Prevenir múltiplos eventos
+    event.preventDefault();
+    event.stopPropagation();
+    
+    window.__USER_INTERACTED__ = true; // Marca interação do usuário
+    
+    try {
+      start();
+    } catch (error) {
+      console.error('[Barcode] Erro ao iniciar:', error);
+    }
+  };
+  
+  // Adicionar eventos para todos os botões disponíveis
+  openButtons.forEach(button => {
+    button.addEventListener('click', handleButtonClick);
+    button.addEventListener('touchstart', handleButtonClick, { passive: false });
+  });
+  
+  closeButton?.addEventListener('click', () => {
+    console.log('[Barcode] Botão fechar clicado');
+    stop();
+  });
 
-  return { start, stop, isActive: () => active };
+  return { 
+    start, 
+    stop, 
+    isActive: () => active,
+    getQuagga: () => Quagga
+  };
 }
