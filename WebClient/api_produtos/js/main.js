@@ -312,15 +312,11 @@ function initFontSizeControl() {
   refs.openDrawer = document.getElementById('open-drawer');
   refs.orderByBtnMobile = document.getElementById('order-by-btn-mobile');
   refs.daysThreshold = document.getElementById('days-threshold');
-  refs.reloadBtn = document.getElementById('reload-btn');
   refs.themeToggle = document.getElementById('theme-toggle');
   refs.logoutBtnMobile = document.getElementById('logout-btn-mobile');
   refs.settingsBtnMobile = document.getElementById('settings-btn-mobile');
   // Desktop controls
   refs.openDrawerDesktop = document.getElementById('open-drawer-desktop');
-  refs.daysThresholdDesktop = document.getElementById('days-threshold-desktop');
-  refs.reloadBtnDesktop = document.getElementById('reload-btn-desktop');
-  refs.themeToggleDesktop = document.getElementById('theme-toggle-desktop');
   refs.logoutBtnDesktop = document.getElementById('logout-btn-desktop');
   refs.settingsBtnDesktop = document.getElementById('settings-btn-desktop');
   // Shared
@@ -328,13 +324,13 @@ function initFontSizeControl() {
   refs.cardsContainer = document.getElementById('cards-container');
   refs.feedback = document.getElementById('feedback');
   refs.search = document.getElementById('search');
-  refs.clearSearch = document.getElementById('clear-search');
   refs.drawer = document.getElementById('filter-drawer');
   refs.closeDrawer = document.getElementById('close-drawer');
   refs.drawerBackdrop = document.getElementById('drawer-backdrop');
   // Settings modal
   refs.settingsModal = document.getElementById('settings-modal');
   refs.closeSettings = document.getElementById('close-settings');
+  refs.themeToggleModal = document.getElementById('theme-toggle-modal');
   refs.themeLabel = document.getElementById('theme-label');
   refs.applyFiltersBtn = document.getElementById('apply-filters');
   refs.statusFilter = document.getElementById('status-filter');
@@ -343,7 +339,38 @@ function initFontSizeControl() {
   refs.groupBy = document.getElementById('group-by');
   refs.pagination = document.getElementById('pagination');
   refs.btnVoice = document.getElementById('btn-voice');
-  refs.btnCamera = document.getElementById('btn-camera');
+  refs.btnCameraMobile = document.getElementById('btn-camera-mobile');
+  refs.btnCameraDesktop = document.getElementById('btn-camera-desktop');
+  
+  // Debug dos botões da câmera
+  console.log('Botões da câmera encontrados:', {
+    mobile: {
+      element: refs.btnCameraMobile,
+      id: refs.btnCameraMobile?.id,
+      disabled: refs.btnCameraMobile?.disabled,
+      classList: refs.btnCameraMobile ? Array.from(refs.btnCameraMobile.classList) : null
+    },
+    desktop: {
+      element: refs.btnCameraDesktop,
+      id: refs.btnCameraDesktop?.id,
+      disabled: refs.btnCameraDesktop?.disabled,
+      classList: refs.btnCameraDesktop ? Array.from(refs.btnCameraDesktop.classList) : null
+    }
+  });
+  
+  // Teste de clique direto para ambos os botões
+  if (refs.btnCameraMobile) {
+    refs.btnCameraMobile.addEventListener('click', (e) => {
+      console.log('Clique direto detectado no botão da câmera mobile:', e);
+    }, true); // Captura na fase de captura
+  }
+  
+  if (refs.btnCameraDesktop) {
+    refs.btnCameraDesktop.addEventListener('click', (e) => {
+      console.log('Clique direto detectado no botão da câmera desktop:', e);
+    }, true); // Captura na fase de captura
+  }
+  
   refs.orderByBtn = document.getElementById('order-by-btn');
   refs.cameraOverlay = document.getElementById('camera-overlay');
   refs.cameraVideo = document.getElementById('camera-video');
@@ -1004,7 +1031,6 @@ function updateThemeLabel() {
 
 function bindEvents() {
   // Mobile
-  refs.reloadBtn?.addEventListener('click', () => loadProducts());
   refs.daysThreshold?.addEventListener('change', () => {
     const v = Number(refs.daysThreshold.value);
     if (v > 0) {
@@ -1020,23 +1046,13 @@ function bindEvents() {
   refs.openDrawer?.addEventListener('click', openDrawer);
 
   // Desktop
-  refs.reloadBtnDesktop?.addEventListener('click', () => loadProducts());
-  refs.daysThresholdDesktop?.addEventListener('change', () => {
-    const v = Number(refs.daysThresholdDesktop.value);
-    if (v > 0) {
-      daysThreshold = v;
-      computeAllStatuses();
-      applyFilters(false);
-      saveState();
-    }
-  });
-  refs.themeToggleDesktop?.addEventListener('click', () => toggleTheme(refs.themeToggleDesktop));
   refs.logoutBtnDesktop?.addEventListener('click', logout);
   refs.settingsBtnDesktop?.addEventListener('click', openSettings);
   refs.openDrawerDesktop?.addEventListener('click', openDrawer);
 
   // Settings modal
   refs.closeSettings?.addEventListener('click', closeSettings);
+  refs.themeToggleModal?.addEventListener('click', () => toggleTheme(refs.themeToggleModal));
   refs.settingsModal?.addEventListener('click', (e) => {
     if (e.target === refs.settingsModal || e.target.classList.contains('modal-backdrop')) {
       closeSettings();
@@ -1097,14 +1113,6 @@ function bindEvents() {
     estoquePositivo = refs.estoquePositivo.checked;
     applyFilters();
     saveState();
-  });
-  
-  refs.clearSearch.addEventListener('click', () => {
-    refs.search.value = '';
-    currentSearch = '';
-    applyFilters(false);
-    refs.search.focus();
-    setFeedback('Busca limpa', 'info');
   });
   
   let debounceId;
@@ -1170,16 +1178,50 @@ function bindEvents() {
   });
 
   initBarcodeScanner({
-    openButton: refs.btnCamera,
+    openButtonMobile: refs.btnCameraMobile,
+    openButtonDesktop: refs.btnCameraDesktop,
     closeButton: refs.closeCamera,
     overlay: refs.cameraOverlay,
     video: refs.cameraVideo,
     statusEl: refs.cameraStatus,
-    onCode: (code) => {
-      refs.search.value = code;
-      currentSearch = code;
-      applyFilters(false);
-      refs.search.focus();
+    onCode: async (code) => {
+      showFlashNotification(`Código escaneado: ${code}`, 'success');
+      
+      try {
+        // Busca específica por código de barras
+        showFlashNotification('Buscando produto...', 'info');
+        
+        const response = await fetch(`${API_BASE_URL}/produtos?search=${encodeURIComponent(code)}`);
+        
+        if (!response.ok) {
+          throw new Error(`Erro na busca: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.data && data.data.length > 0) {
+          // Produto encontrado
+          await displayProducts(data.data, data.current_page, data.last_page);
+          showFlashNotification(`Produto encontrado: ${data.data[0].nome}`, 'success');
+        } else {
+          // Produto não encontrado, fazer busca normal
+          refs.search.value = code;
+          currentSearch = code;
+          applyFilters(false);
+          showFlashNotification('Produto não encontrado por código. Fazendo busca geral...', 'warning');
+        }
+        
+        refs.search.focus();
+        
+      } catch (error) {
+        console.error('Erro ao buscar produto:', error);
+        // Fallback para busca normal
+        refs.search.value = code;
+        currentSearch = code;
+        applyFilters(false);
+        refs.search.focus();
+        showFlashNotification('Erro na busca específica. Fazendo busca geral...', 'error');
+      }
     }
   });
 
@@ -1225,9 +1267,9 @@ function toggleTheme(btn) {
   btn.textContent = current === 'light' ? '🌙' : '☀️';
   saveTheme(current);
   saveState();
-  // Sincroniza símbolo no outro botão
+  // Sincroniza símbolo nos outros botões
   if (refs.themeToggle && refs.themeToggle !== btn) refs.themeToggle.textContent = btn.textContent;
-  if (refs.themeToggleDesktop && refs.themeToggleDesktop !== btn) refs.themeToggleDesktop.textContent = btn.textContent;
+  if (refs.themeToggleModal && refs.themeToggleModal !== btn) refs.themeToggleModal.textContent = btn.textContent;
   // Atualiza label no modal de configurações
   updateThemeLabel();
 }
@@ -1242,11 +1284,10 @@ function syncInputsFromState() {
   if (refs.estoquePositivo) refs.estoquePositivo.checked = estoquePositivo;
   // Sincroniza ambos inputs de dias
   if (refs.daysThreshold) refs.daysThreshold.value = daysThreshold;
-  if (refs.daysThresholdDesktop) refs.daysThresholdDesktop.value = daysThreshold;
-  // Sincroniza ambos botões de tema
+  // Sincroniza botões de tema
   const themeSymbol = document.documentElement.getAttribute('data-theme') === 'light' ? '🌙' : '☀️';
   if (refs.themeToggle) refs.themeToggle.textContent = themeSymbol;
-  if (refs.themeToggleDesktop) refs.themeToggleDesktop.textContent = themeSymbol;
+  if (refs.themeToggleModal) refs.themeToggleModal.textContent = themeSymbol;
 }
 
 function init() {

@@ -66,6 +66,7 @@
         <img src="./img/icon-s.png" alt="Abrir menu" style="width: 28px; height: 28px; display: block;" />
       </button>
       <div style="flex:1;"></div>
+      <button id="btn-camera-mobile" type="button" class="icon-btn only-mobile" aria-label="Ler código de barras" title="Ler código de barras" style="margin-right:8px;">📷</button>
       <button id="settings-btn-mobile" class="icon-btn only-mobile" aria-label="Configurações" title="Configurações" style="margin-right:8px;">⚙️</button>
       <button id="logout-btn-mobile" class="icon-btn hdr-btn only-mobile" style="background:var(--c-panel-alt); color:var(--c-accent); border:1px solid var(--c-accent); font-weight:600; font-size:1.05rem; border-radius:8px; padding:0.45rem 1.1rem; cursor:pointer; margin-left:auto;">
         Sair
@@ -156,11 +157,11 @@
     </div>
     <div style="justify-self: center;">
       <div class="search-box header-search" style="width: 100%; max-width: 780px; display: flex; justify-content: center;">
-  <input id="search" type="search" placeholder="Buscar (código, nome, marca...)" autocomple        <button id="btn-camera" type="button" class="icon-btn" aria-label="Ler código de barras" title="Ler código de barras">📷</button>
-        <button id="clear-search" type="button" class="icon-btn" aria-label="Limpar busca" title="Limpar busca">×</button>
+  <input id="search" type="search" placeholder="Buscar (código, nome, marca...)" autocomplete="off" />
       </div>
     </div>
     <div style="justify-self: end; display:flex; gap:8px; align-items:center;">
+      <button id="btn-camera-desktop" type="button" class="icon-btn only-desktop" aria-label="Ler código de barras" title="Ler código de barras">📷</button>
       <button id="settings-btn-desktop" class="icon-btn hdr-btn only-desktop" aria-label="Configurações" title="Configurações">⚙️</button>
       <button id="logout-btn-desktop" class="icon-btn hdr-btn only-desktop" style="background:var(--c-panel-alt); color:var(--c-accent); border:1px solid var(--c-accent); font-weight:600; font-size:1.05rem; border-radius:8px; padding:0.45rem 1.1rem; cursor:pointer;">
         Sair
@@ -222,7 +223,7 @@
         <div class="settings-group">
           <label for="theme-setting">Tema</label>
           <div style="display: flex; align-items: center; gap: 10px;">
-            <button id="theme-toggle" type="button" class="icon-btn" aria-label="Alternar tema" title="Alternar tema">🌙</button>
+            <button id="theme-toggle-modal" type="button" class="icon-btn" aria-label="Alternar tema" title="Alternar tema">🌙</button>
             <span id="theme-label">Escuro</span>
           </div>
         </div>

@@ -322,7 +322,7 @@ h1 {
     margin-left: 0;
     margin-right: 0;
   }
-  .reload-btn-highlight, .icon-btn {
+  .icon-btn {
     margin-left: 0;
     margin-right: 0;
   }
@@ -388,6 +388,7 @@ h1 {
   max-width: 780px;
   margin: 0 auto;
   align-items: center;
+  z-index: 1; /* Garantir que não sobreponha botões */
 }
 
 .search-box.header-search:focus-within {
@@ -419,6 +420,13 @@ h1 {
   line-height: 1;
   min-height: 36px;
   min-width: 36px;
+  /* Garantir que seja clicável em mobile */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  position: relative;
+  z-index: 10; /* Garantir que fique acima de outros elementos */
 }
 
 .icon-btn:hover {
@@ -1112,13 +1120,14 @@ th, td {
     background: var(--c-panel);
     border-top: 1px solid var(--c-border);
     box-shadow: 0 -2px 10px -2px rgba(0,0,0,.08);
-    padding: .35rem .6rem .37rem .6rem;
+    padding: .4rem .6rem .45rem .6rem; /* Padding mais equilibrado */
     display: flex !important;
     align-items: center;
     justify-content: center;
+    min-height: 56px; /* Altura reduzida */
   }
   .main-content {
-    padding-bottom: 4.7em !important;
+    padding-bottom: 4.8em !important; /* Ajustado para compensar header menor */
     padding-top: 0.2em !important;
   }
   .filter-drawer {
@@ -1126,23 +1135,26 @@ th, td {
   }
   .header-left {
     width: 100%;
-    display: block;
+    display: flex; /* Mudança de block para flex */
+    align-items: center;
+    gap: .4rem; /* Espaçamento entre elementos */
   }
   .header-search {
     width: 100%;
     max-width: none;
     margin: 0 auto;
-    border-radius: 7px;
+    border-radius: 12px;
     padding: 0;
     background: var(--c-panel-alt);
     border: none;
+    margin-right: .3em; /* Espaço menor entre busca e botões */
   }
   .header-search input {
-  width: calc(100vw - 2.1rem);
-  max-width: calc(100vw - 2.1rem);
+  width: calc(100vw - 7rem); /* Largura ajustada para botões menores */
+  max-width: calc(100vw - 7rem);
   font-size: 0.95rem;
-  padding: .55em 1.05rem;
-  border-radius: 14px;
+  padding: .65em 1.1rem; /* Padding maior */
+  border-radius: 12px;
   background: var(--c-panel-alt);
   border: 1.5px solid var(--c-border);
   font-weight: 500;
@@ -1163,13 +1175,18 @@ th, td {
   }
   .icon-btn {
     font-size: 1.13em;
-    min-height: 38px;
+    min-height: 44px;
     padding: 0 .6em;
+    /* Garantir toque responsivo em mobile */
+    min-width: 44px;
+    background: transparent; /* Mesmo que o .icon-btn original */
+    border: none; /* Mesmo que o .icon-btn original */
+    margin: 0 .2em; /* Espaçamento menor entre botões */
   }
   .table-wrapper, .cards-container, .main-content {
     margin-top: 2.9em;
   }
-  #open-drawer-desktop, #days-threshold-desktop, #theme-toggle-desktop, #reload-btn-desktop {
+  #open-drawer-desktop {
     display: none !important;
   }
 }
@@ -1191,8 +1208,7 @@ th, td {
   }
   .header-left { display: flex; align-items: center; gap: .7rem; flex: 1; min-width: 0; }
   .header-search { min-width: 220px; max-width: 330px; }
-  .days-header-input { margin-left: .7rem; }
-  #open-drawer-desktop, #days-threshold-desktop, #theme-toggle-desktop, #reload-btn-desktop {
+  #open-drawer-desktop {
     display: inline-flex !important;
   }
 }
@@ -1259,20 +1275,99 @@ th, td {
   font-size: .6rem;
   color: var(--c-text-dim);
   letter-spacing: .3px;
+  text-align: center;
+  margin-bottom: .25rem;
 }
 
 video {
   width: 100%;
-  aspect-ratio: 3/4;
+  height: auto;
+  min-height: 240px;
+  max-height: 60vh;
   object-fit: cover;
   background: #000;
   border-radius: var(--radius);
+  border: 2px solid var(--c-accent);
 }
 
 .camera-status {
-  font-size: .6rem;
+  font-size: .65rem;
   color: var(--c-text-dim);
   min-height: .9em;
+  text-align: center;
+  padding: .25rem;
+  background: var(--c-panel-alt);
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+/* Overlay de scan para indicar área de leitura */
+.camera-box::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 200px;
+  height: 100px;
+  border: 2px solid var(--c-accent);
+  border-radius: 8px;
+  z-index: 1;
+  pointer-events: none;
+  box-shadow: 
+    0 0 0 9999px rgba(0, 0, 0, 0.3),
+    inset 0 0 20px rgba(59, 130, 246, 0.2);
+}
+
+/* Mobile específico */
+@media (max-width: 480px) {
+  .camera-box {
+    width: 95vw;
+    height: 90vh;
+    max-width: none;
+    padding: .5rem;
+  }
+  
+  video {
+    flex: 1;
+    min-height: 60vh;
+    max-height: 70vh;
+  }
+  
+  .camera-box::before {
+    width: 280px;
+    height: 120px;
+  }
+  
+  .camera-hint {
+    font-size: .7rem;
+    margin-bottom: .5rem;
+  }
+  
+  .camera-status {
+    font-size: .7rem;
+    padding: .4rem;
+  }
+}
+
+/* Animação de pulse para indicar escaneamento ativo */
+.camera-box.scanning::before {
+  animation: scanPulse 2s infinite;
+}
+
+@keyframes scanPulse {
+  0%, 100% { 
+    border-color: var(--c-accent);
+    box-shadow: 
+      0 0 0 9999px rgba(0, 0, 0, 0.3),
+      inset 0 0 20px rgba(59, 130, 246, 0.2);
+  }
+  50% { 
+    border-color: var(--c-ok);
+    box-shadow: 
+      0 0 0 9999px rgba(0, 0, 0, 0.3),
+      inset 0 0 20px rgba(34, 197, 94, 0.3);
+  }
 }
 
 /* Notificação Flash - Sistema de alertas visuais */
