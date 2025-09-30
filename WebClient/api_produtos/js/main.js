@@ -718,15 +718,22 @@ function renderCard(prod) {
   const meta = document.createElement('div');
   meta.className = 'meta-grid';
   
+  // Criar elemento de preços com preço 1 e preço 2 abaixo
+  let precosHTML = `<span class="meta-label">PREÇO</span>R$ ${formatNum(prod.PRO_PRECO1)}`;
+  
+  // Verifica se preço 2 existe e é maior que 0
+  if (prod.PRO_PRECO2 && parseFloat(prod.PRO_PRECO2) > 0) {
+    precosHTML += `<br>R$ ${formatNum(prod.PRO_PRECO2)}`;
+  }
+  
   meta.innerHTML = `
     <span><span class="meta-label">CÓD</span>${escapeHtml(prod.PRO_CODIGO)}</span>
-    <span><span class="meta-label">PREÇO 1</span>R$ ${formatNum(prod.PRO_PRECO1)}</span>
+    <span>${precosHTML}</span>
     <span class="meta-estoque">
       <span class="meta-label">ESTOQUE</span>
       <span class="estoque-valor">${formatNum(prod.PRO_ESTOQ1)} ${escapeHtml(prod.UND_NOME) || 'UN'}</span>
     </span>
     <span><span class="meta-label">CÓD. BARRA</span>${escapeHtml(prod.PRO_COD_BARRA)}</span>
-    <span><span class="meta-label">PREÇO 2</span>R$ ${formatNum(prod.PRO_PRECO2)}</span>
     <span class="meta-marca"><span class="meta-label">MARCA</span>${escapeHtml(prod.MAR_DESCRI) || '-'}</span>
     <span class="meta-grupo"><span class="meta-label">GRUPO</span>${escapeHtml(prod.GP_DESCRI)}</span>
   `;
