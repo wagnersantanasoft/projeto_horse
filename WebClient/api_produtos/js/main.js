@@ -529,35 +529,13 @@ async function loadProducts() {
     if (currentSearch.length > 0) {
       const searchType = /^\d+$/.test(currentSearch) ? 'código' : 'texto';
       setFeedback(`✅ Busca por ${searchType} atualizada: ${filtered.length} resultado(s) de ${allProducts.length} produtos.`, 'success');
-      
-      // Notificação flash para busca
-      showFlashNotification(
-        'Busca Realizada',
-        `${filtered.length} resultado(s) encontrado(s) para "${currentSearch}"`,
-        'info',
-        2500
-      );
     } else {
       setFeedback(`Carregado: ${allProducts.length} registros.`, 'success');
-      
-      // Notificação flash para carregamento inicial
-      showFlashNotification(
-        'Produtos Carregados',
-        `${allProducts.length} produtos carregados com sucesso!`,
-        'success',
-        2000
-      );
     }
   } catch (e) {
     setFeedback('Erro ao carregar: ' + e.message, 'error');
     
-    // Notificação flash para erro de carregamento
-    showFlashNotification(
-      'Erro ao Carregar',
-      `Não foi possível carregar os produtos: ${e.message}`,
-      'error',
-      5000
-    );
+    // (Não exibe flash para erro de busca/carregamento)
   } finally {
     setLoading(false);
   }

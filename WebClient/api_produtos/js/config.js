@@ -1,5 +1,5 @@
 export const CONFIG = {
-  API_BASE_URL: 'http://192.168.1.23:9001',
+  API_BASE_URL: 'http://10.0.1.53:9001',
   ENDPOINT_PRODUCTS: '/api/produtos',
   ENDPOINT_USERS: '/api/usuarios',
   PAGE_SIZE: 25,
