@@ -13,7 +13,20 @@ import { serverConfig } from './serverConfig.js';
     if (window.updateApiConfig) {
       window.updateApiConfig();
     }
-    console.log('API configurada para:', CONFIG.API_BASE_URL);
+    
+    // Debug para mobile - sempre carregar
+    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isNetworkAccess = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+    
+    if (isMobile || isNetworkAccess) {
+      console.log('🔧 [MOBILE DEBUG] Ambiente detectado:', {
+        userAgent: navigator.userAgent,
+        hostname: window.location.hostname,
+        href: window.location.href,
+        isMobile: isMobile,
+        isNetworkAccess: isNetworkAccess
+      });
+    }
     
     // Carrega debug em desenvolvimento (opcional)
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
@@ -56,10 +69,13 @@ let lastActivity = Date.now();
 function getCurrentUser() {
   try {
     const userSession = localStorage.getItem('app_user');
+    console.log('👤 [MOBILE DEBUG] localStorage app_user:', userSession);
     if (!userSession) return null;
-    return JSON.parse(userSession);
+    const parsed = JSON.parse(userSession);
+    console.log('👤 [MOBILE DEBUG] Usuário parseado:', parsed);
+    return parsed;
   } catch (error) {
-    console.warn('Erro ao obter usuário atual:', error);
+    console.warn('❌ [MOBILE DEBUG] Erro ao obter usuário atual:', error);
     return null;
   }
 }
@@ -67,9 +83,10 @@ function getCurrentUser() {
 function getSessionTimestamp() {
   try {
     const timestamp = localStorage.getItem('app_session_timestamp');
+    console.log('⏰ [MOBILE DEBUG] localStorage app_session_timestamp:', timestamp);
     return timestamp ? parseInt(timestamp) : null;
   } catch (error) {
-    console.warn('Erro ao obter timestamp da sessão:', error);
+    console.warn('❌ [MOBILE DEBUG] Erro ao obter timestamp da sessão:', error);
     return null;
   }
 }
@@ -85,10 +102,15 @@ function updateSessionTimestamp() {
 
 function isSessionExpired() {
   const timestamp = getSessionTimestamp();
-  if (!timestamp) return true;
+  if (!timestamp) {
+    console.log('⏰ [MOBILE DEBUG] Sem timestamp - sessão expirada');
+    return true;
+  }
   
   const timeDiff = Date.now() - timestamp;
-  return timeDiff > SESSION_TIMEOUT;
+  const expired = timeDiff > SESSION_TIMEOUT;
+  console.log('⏰ [MOBILE DEBUG] Diferença de tempo:', timeDiff, 'ms, Timeout:', SESSION_TIMEOUT, 'ms, Expirada:', expired);
+  return expired;
 }
 
 function isUserLoggedIn() {
@@ -97,7 +119,6 @@ function isUserLoggedIn() {
   const sessionValid = !isSessionExpired();
   
   if (hasValidUser && !sessionValid) {
-    console.log('Sessão expirada, fazendo logout automático...');
     logout();
     return false;
   }
@@ -151,7 +172,6 @@ function logout() {
     localStorage.removeItem('app_user');
     localStorage.removeItem('app_session_timestamp');
     
-    console.log('Usuário deslogado');
     window.location.href = 'login.html';
   } catch (error) {
     console.error('Erro ao fazer logout:', error);
@@ -173,12 +193,10 @@ function initializeSession() {
   // Verificação periódica a cada 30 segundos para maior segurança
   setInterval(() => {
     if (!isUserLoggedIn()) {
-      console.log('Verificação periódica: sessão inválida detectada');
       logout();
     }
   }, 30000);
   
-  console.log('Sessão inicializada com timeout de 15 minutos');
   return true;
 }
 
@@ -215,25 +233,18 @@ function saveState() {
 function loadState() {
   try {
     const raw = localStorage.getItem(storageKey('prefs'));
-    console.log('localStorage raw:', raw);
     
     if (!raw) {
-      // Se não há dados salvos, usar valores padrão
-      console.log('Nenhum estado salvo encontrado, usando valores padrão');
-      console.log('Valores padrão aplicados: Status =', currentStatusFilter, ', Dias =', daysThreshold);
       return;
     }
     
     const s = JSON.parse(raw);
-    console.log('Estado carregado do localStorage:', s);
     
     currentSearch = s.search ?? '';
     
     // Carregar status salvo pelo usuário (sem forçar padrão fixo)
     currentStatusFilter = s.status ?? '';
     daysThreshold = s.days && s.days > 0 ? s.days : 30;
-    
-    console.log('Valores após loadState: Status =', currentStatusFilter, ', Dias =', daysThreshold);
     
     currentGrupo = s.grupo ?? '';
     currentMarca = s.marca ?? '';
@@ -381,13 +392,13 @@ function initFontSizeControl() {
   // Teste de clique direto para ambos os botões
   if (refs.btnCameraMobile) {
     refs.btnCameraMobile.addEventListener('click', (e) => {
-      console.log('Clique direto detectado no botão da câmera mobile:', e);
+      // Camera mobile click handler
     }, true); // Captura na fase de captura
   }
   
   if (refs.btnCameraDesktop) {
     refs.btnCameraDesktop.addEventListener('click', (e) => {
-      console.log('Clique direto detectado no botão da câmera desktop:', e);
+      // Camera desktop click handler
     }, true); // Captura na fase de captura
   }
   
@@ -536,13 +547,25 @@ function setLoading(value, message='') {
 }
 
 async function loadProducts() {
+  console.log('🔄 [MOBILE DEBUG] Iniciando carregamento de produtos...');
   setLoading(true, 'Carregando produtos...');
   try {
+    console.log('🌐 [MOBILE DEBUG] Chamando productService.listAll()...');
     allProducts = await productService.listAll();
+    console.log('📦 [MOBILE DEBUG] Produtos recebidos:', allProducts.length);
+    console.log('📋 [MOBILE DEBUG] Primeiros 3 produtos:', allProducts.slice(0, 3));
+    
     computeAllStatuses();
+    console.log('✅ [MOBILE DEBUG] Status computados');
+    
     buildMarcaGrupoOptions();
+    console.log('🏷️ [MOBILE DEBUG] Opções de marca/grupo construídas');
+    
     syncInputsFromState();
+    console.log('🔄 [MOBILE DEBUG] Inputs sincronizados');
+    
     applyFilters(false);
+    console.log('🔍 [MOBILE DEBUG] Filtros aplicados, produtos filtrados:', filtered.length);
     
     // Feedback específico para busca vs carregamento inicial
     if (currentSearch.length > 0) {
@@ -551,12 +574,20 @@ async function loadProducts() {
     } else {
       setFeedback(`Carregado: ${allProducts.length} registros.`, 'success');
     }
+    console.log('🎉 [MOBILE DEBUG] Carregamento concluído com sucesso');
   } catch (e) {
+    console.error('❌ [MOBILE DEBUG] Erro no carregamento:', e);
+    console.error('🔍 [MOBILE DEBUG] Detalhes do erro:', {
+      message: e.message,
+      stack: e.stack,
+      name: e.name
+    });
     setFeedback('Erro ao carregar: ' + e.message, 'error');
     
     // (Não exibe flash para erro de busca/carregamento)
   } finally {
     setLoading(false);
+    console.log('[Main] Loading finalizado');
   }
 }
 
@@ -614,6 +645,9 @@ function escapeHtml(str) {
 function tokenize(s){ return s.toLowerCase().split(/\s+/).filter(Boolean); }
 
 function applyFilters(recalcStatus = true) {
+  console.log('[Main] Aplicando filtros... recalcStatus:', recalcStatus);
+  console.log('[Main] allProducts.length:', allProducts?.length || 0);
+  
   if (recalcStatus) computeAllStatuses();
   const tokens = tokenize(currentSearch);
   filtered = allProducts.filter(p => {
@@ -656,9 +690,12 @@ function applyFilters(recalcStatus = true) {
     }
     return true;
   });
+  console.log('[Main] Filtros aplicados. Produtos filtrados:', filtered.length);
   sortFiltered();
   currentPage = 1;
+  console.log('[Main] Chamando render()...');
   render();
+  console.log('[Main] Render() concluído');
   saveState();
 }
 
@@ -1313,13 +1350,26 @@ function syncInputsFromState() {
 }
 
 function init() {
+  console.log('🚀 [MOBILE DEBUG] Init() iniciado');
   document.documentElement.setAttribute('data-theme', loadTheme());
+  
+  // Debug da sessão
+  const user = getCurrentUser();
+  const timestamp = getSessionTimestamp();
+  const sessionExpired = isSessionExpired();
+  
+  console.log('👤 [MOBILE DEBUG] Usuário atual:', user);
+  console.log('⏰ [MOBILE DEBUG] Timestamp da sessão:', timestamp);
+  console.log('⏱️ [MOBILE DEBUG] Sessão expirada?', sessionExpired);
+  console.log('✅ [MOBILE DEBUG] Usuário logado?', isUserLoggedIn());
   
   // Inicializar sistema de sessão ANTES de tudo
   if (!initializeSession()) {
-    console.log('Sessão inválida, redirecionando para login...');
+    console.log('❌ [MOBILE DEBUG] Sessão inválida, redirecionando para login...');
     return; // Para a execução se a sessão for inválida
   }
+  
+  console.log('✅ [MOBILE DEBUG] Sessão válida, continuando inicialização...');
   
   loadState();
   // update order button to reflect persisted state
@@ -1330,7 +1380,7 @@ function init() {
   initRefs();
   
   // Aplicar valores padrão IMEDIATAMENTE após initRefs
-  console.log('Aplicando valores padrão: Status =', currentStatusFilter, ', Dias =', daysThreshold);
+  console.log('🔧 [MOBILE DEBUG] Aplicando valores padrão: Status =', currentStatusFilter, ', Dias =', daysThreshold);
   if (refs.statusFilter) {
     refs.statusFilter.value = currentStatusFilter;
     console.log('Status filter definido para:', refs.statusFilter.value);

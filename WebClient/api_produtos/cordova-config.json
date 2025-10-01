@@ -1,0 +1,63 @@
+{
+  "name": "APIProdutosCordova",
+  "displayName": "API Produtos",
+  "version": "1.0.0",
+  "description": "Sistema de gerenciamento de produtos",
+  "author": "Wagner Santana",
+  "homepage": "https://github.com/wagnersantanasoft",
+  "engines": {
+    "cordova": ">=9.0.0",
+    "cordova-android": ">=8.0.0"
+  },
+  "preferences": {
+    "AndroidPersistentFileLocation": "Compatibility",
+    "AndroidExtraFilesystems": "files,files-external,documents,sdcard,cache,cache-external,root",
+    "BackupWebStorage": "none",
+    "SplashScreen": "screen",
+    "SplashScreenDelay": "3000",
+    "AutoHideSplashScreen": "true",
+    "ShowSplashScreenSpinner": "false",
+    "DisallowOverscroll": "true",
+    "WebViewBounce": "false",
+    "UIWebViewBounce": "false",
+    "EnableViewportScale": "false",
+    "MediaPlaybackRequiresUserAction": "false",
+    "AllowInlineMediaPlayback": "true",
+    "BackgroundColorFromCSS": "true",
+    "StatusBarOverlaysWebView": "false",
+    "StatusBarBackgroundColor": "#000000",
+    "StatusBarStyle": "lightcontent",
+    "Orientation": "portrait",
+    "Fullscreen": "false"
+  },
+  "plugins": {
+    "cordova-plugin-whitelist": "^1.3.3",
+    "cordova-plugin-statusbar": "^2.4.2",
+    "cordova-plugin-device": "^2.0.2",
+    "cordova-plugin-splashscreen": "^5.0.2",
+    "cordova-plugin-inappbrowser": "^3.0.0",
+    "cordova-plugin-network-information": "^2.0.1",
+    "cordova-plugin-camera": "^4.0.3",
+    "cordova-plugin-media-capture": "^3.0.2",
+    "phonegap-plugin-barcodescanner": "^8.1.0"
+  },
+  "platforms": [
+    "android"
+  ],
+  "cordova": {
+    "preferences": {
+      "AndroidXEnabled": "true"
+    },
+    "plugins": {
+      "cordova-plugin-whitelist": {},
+      "cordova-plugin-statusbar": {},
+      "cordova-plugin-device": {},
+      "cordova-plugin-splashscreen": {},
+      "cordova-plugin-inappbrowser": {},
+      "cordova-plugin-network-information": {},
+      "cordova-plugin-camera": {},
+      "cordova-plugin-media-capture": {},
+      "phonegap-plugin-barcodescanner": {}
+    }
+  }
+}
