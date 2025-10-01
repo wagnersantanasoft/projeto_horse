@@ -4,6 +4,25 @@ import { computeStatus } from './status.js';
 import { brToIso, isoToBr } from './dateUtils.js';
 import { paginate, buildPagination } from './pagination.js';
 import { initVoiceSearch, initBarcodeScanner } from './voiceCamera.js';
+import { serverConfig } from './serverConfig.js';
+
+// Inicializa configuração do servidor na primeira carga
+(function initServerConfig() {
+  try {
+    // Atualiza a configuração se ela foi alterada no login
+    if (window.updateApiConfig) {
+      window.updateApiConfig();
+    }
+    console.log('API configurada para:', CONFIG.API_BASE_URL);
+    
+    // Carrega debug em desenvolvimento (opcional)
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      import('./debugConfig.js').catch(() => {});
+    }
+  } catch (error) {
+    console.warn('Erro ao inicializar configuração do servidor:', error);
+  }
+})();
 
 // Adiciona formatador de número padrão brasileiro
 function formatNum(num) {
