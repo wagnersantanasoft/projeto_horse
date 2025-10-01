@@ -19,9 +19,9 @@
     margin: 0.5em auto !important;
     display: block !important;
     box-sizing: border-box;
-    height: 2.2em !important;
-    min-height: 2.2em !important;
-    background: #f3f6fa !important;
+    height: 2.8em !important;
+    min-height: 2.8em !important;
+    background: var(--c-panel-alt) !important;
     border-radius: 12px !important;
     padding-left: 1.1em !important;
     padding-right: 1.1em !important;
@@ -42,8 +42,8 @@
     margin: 0 auto !important;
     display: block !important;
     box-sizing: border-box;
-    height: 2.2em !important;
-    min-height: 2.2em !important;
+    height: 2.8em !important;
+    min-height: 2.8em !important;
   }
 }
 #search.search-box.header-search {
@@ -56,7 +56,7 @@
   border: 1.5px solid #8bb6e2 !important;
   outline: none !important;
   box-shadow: 0 0 0 2px #eaf3fb !important;
-  background: #fafdff !important;
+  background: var(--c-panel) !important;
 }
 /* Controle de exibição dos botões de abrir aside */
 .only-mobile { display: none !important; }
@@ -460,7 +460,7 @@ h1 {
   flex: 1 1 auto;
   border: none;
   background: transparent;
-  padding: 1rem 1.05rem;
+  padding: 1.2rem 1.05rem;
   font-size: 1.09rem;
   color: var(--c-text);
   min-width: 0;
@@ -1213,9 +1213,9 @@ th, td {
   width: calc(100vw - 7rem); /* Largura ajustada para botões menores */
   max-width: calc(100vw - 7rem);
   font-size: 0.95rem;
-  padding: .65em 1.1rem; /* Padding maior */
+  padding: .85em 1.1rem; /* Padding maior para altura aumentada */
   border-radius: 12px;
-  background: var(--c-panel-alt);
+  background: transparent;
   border: 1.5px solid var(--c-border);
   font-weight: 500;
   box-shadow: 0 2px 6px -1px rgba(0,0,0,.12);
@@ -1224,14 +1224,7 @@ th, td {
   position: static;
   left: unset;
   transform: none;
-  .header-search input {
-    font-size: 1rem;
-    padding: .7rem 1rem;
-    min-width: 220px;
-    max-width: 480px;
-    width: 100%;
-    box-sizing: border-box;
-  }
+  color: var(--c-text);
   }
   .icon-btn {
     font-size: 1.13em;
