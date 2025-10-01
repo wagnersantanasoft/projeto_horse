@@ -12,8 +12,22 @@
   <form class="login-container" id="login-form">
     <img src="./img/logo.png" alt="Logo" />
   <!-- título principal removido conforme solicitado -->
+    
     <input type="text" id="username" placeholder="Usuário" autocomplete="username" required />
     <input type="password" id="password" placeholder="Senha" autocomplete="current-password" required />
+    
+    <!-- Configuração de servidor (aparece apenas para admin) -->
+    <div class="server-config" id="server-config" style="display: none;">
+      <div class="config-title">⚙️ Configuração do Servidor</div>
+      <input type="text" id="server-ip" placeholder="IP do Servidor (ex: 192.168.1.23)" />
+      <input type="number" id="server-port" placeholder="Porta (ex: 9001)" min="1" max="65535" />
+      <div class="config-buttons">
+        <button type="button" id="save-config-btn">Salvar</button>
+        <button type="button" id="back-to-login-btn" class="back-to-login" title="Voltar ao Login">↶</button>
+      </div>
+      <div class="config-info" id="config-info"></div>
+    </div>
+    
     <div class="login-error" id="login-error">Usuário ou senha inválidos!</div>
     <button type="submit">Entrar</button>
     <div class="login-subtle">Gestor de validade</div>

@@ -1,5 +1,7 @@
 // Login page JavaScript functionality
 import { usersService } from './usersService.js';
+import { serverConfig } from './serverConfig.js';
+import { flashNotification } from './flashNotification.js';
 
 // Aplica o tema salvo pela aplicação principal (usa mesmo storage prefix 'cv_')
 (function(){
@@ -14,12 +16,119 @@ import { usersService } from './usersService.js';
 document.addEventListener('DOMContentLoaded', function() {
   const form = document.getElementById('login-form');
   const errEl = document.getElementById('login-error');
+  const usernameInput = document.getElementById('username');
+  const passwordInput = document.getElementById('password');
+  const serverConfigDiv = document.getElementById('server-config');
+  const serverIpInput = document.getElementById('server-ip');
+  const serverPortInput = document.getElementById('server-port');
+  const saveConfigBtn = document.getElementById('save-config-btn');
+  const configInfo = document.getElementById('config-info');
+  const backToLoginBtn = document.getElementById('back-to-login-btn');
+
+  // Carrega configuração atual nos campos
+  function loadCurrentConfig() {
+    const config = serverConfig.getConfig();
+    serverIpInput.value = config.ip;
+    serverPortInput.value = config.port;
+  }
+
+  // Volta para tela de login normal
+  function backToNormalLogin() {
+    serverConfigDiv.style.display = 'none';
+    usernameInput.value = '';
+    passwordInput.value = '';
+    configInfo.style.display = 'none';
+    errEl.style.display = 'none';
+    usernameInput.focus();
+  }
+
+  // Verifica se deve mostrar configuração do servidor
+  function checkForAdminLogin() {
+    const username = usernameInput.value.trim().toLowerCase();
+    const password = passwordInput.value.trim().toLowerCase();
+    
+    if (username === 'admin' && password === 'admin') {
+      serverConfigDiv.style.display = 'block';
+      loadCurrentConfig();
+      return true;
+    } else {
+      serverConfigDiv.style.display = 'none';
+      return false;
+    }
+  }
+
+  // Monitora mudanças nos campos de login
+  usernameInput.addEventListener('input', checkForAdminLogin);
+  passwordInput.addEventListener('input', checkForAdminLogin);
+
+  // Botão voltar ao login
+  backToLoginBtn.addEventListener('click', backToNormalLogin);
+
+  // Salvar configuração do servidor
+  saveConfigBtn.addEventListener('click', function() {
+    const ip = serverIpInput.value.trim();
+    const port = serverPortInput.value.trim();
+    
+    // Valida a configuração
+    const validation = serverConfig.validateConfig(ip, port);
+    
+    if (!validation.isValid) {
+      configInfo.textContent = validation.errors.join(', ');
+      configInfo.className = 'config-info error';
+      configInfo.style.display = 'block';
+      
+      // Remove a mensagem de erro após 3 segundos
+      setTimeout(() => {
+        configInfo.style.display = 'none';
+      }, 3000);
+      return;
+    }
+    
+    // Salva a configuração
+    const result = serverConfig.saveConfig(ip, port);
+    
+    if (result.success) {
+      // Atualiza a configuração global se disponível
+      if (window.updateApiConfig) {
+        window.updateApiConfig();
+      }
+      
+      // Mostra notificação de sucesso
+      flashNotification.success(
+        'Configuração Salva!',
+        `Servidor configurado para ${ip}:${port}`,
+        3000
+      );
+      
+      // Volta para login normal após salvar com sucesso
+      setTimeout(() => {
+        backToNormalLogin();
+      }, 1500);
+    } else {
+      configInfo.textContent = result.message;
+      configInfo.className = 'config-info error';
+      configInfo.style.display = 'block';
+      
+      // Remove a mensagem de erro após 3 segundos
+      setTimeout(() => {
+        configInfo.style.display = 'none';
+      }, 3000);
+    }
+  });
 
   form.addEventListener('submit', async function(e) {
     e.preventDefault();
     errEl.style.display = 'none';
-    const user = document.getElementById('username').value.trim();
-    const pass = document.getElementById('password').value.trim();
+    const user = usernameInput.value.trim();
+    const pass = passwordInput.value.trim();
+    
+    // Se for admin/admin, apenas exibe a configuração (não faz login real)
+    if (user.toLowerCase() === 'admin' && pass.toLowerCase() === 'admin') {
+      if (serverConfigDiv.style.display === 'none') {
+        checkForAdminLogin();
+      }
+      return; // Não prossegue com o login
+    }
     
     try {
       const list = await usersService.listAll();
@@ -45,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     } catch (err) {
       console.error('Erro ao validar login:', err);
-      errEl.textContent = 'Erro ao conectar com o servidor.';
+      errEl.textContent = 'Erro ao conectar com o servidor. Verifique a configuração.';
       errEl.style.display = 'block';
     }
   });
