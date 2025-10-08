@@ -4,8 +4,6 @@
   <meta charset="UTF-8" />
   <title>Login - Gestor de Validade</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <!-- Content Security Policy para Cordova -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: https://ssl.gstatic.com 'unsafe-eval' 'unsafe-inline' *; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' http://* https://*; img-src 'self' data: *;">
   <link rel="stylesheet" href="./css/login.css" />
   <!-- Fonte para o título -->
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
@@ -27,9 +25,6 @@
         <button type="button" id="save-config-btn">Salvar</button>
         <button type="button" id="back-to-login-btn" class="back-to-login" title="Voltar ao Login">↶</button>
       </div>
-      <div class="test-buttons">
-        <button type="button" id="test-connection-btn" class="test-btn">🔗 Testar Conexão</button>
-      </div>
       <div class="config-info" id="config-info"></div>
     </div>
     
@@ -37,6 +32,6 @@
     <button type="submit">Entrar</button>
     <div class="login-subtle">Gestor de validade</div>
   </form>
-  <script src="./js/login-ultra.js"></script>
+  <script type="module" src="./js/login.js"></script>
 </body>
 </html>

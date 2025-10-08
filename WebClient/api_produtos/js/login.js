@@ -2,7 +2,6 @@
 import { usersService } from './usersService.js';
 import { serverConfig } from './serverConfig.js';
 import { flashNotification } from './flashNotification.js';
-import { connectivityTest } from './connectivityTest.js';
 
 // Aplica o tema salvo pela aplicação principal (usa mesmo storage prefix 'cv_')
 (function(){
@@ -25,7 +24,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const saveConfigBtn = document.getElementById('save-config-btn');
   const configInfo = document.getElementById('config-info');
   const backToLoginBtn = document.getElementById('back-to-login-btn');
-  const testConnectionBtn = document.getElementById('test-connection-btn');
 
   // Carrega configuração atual nos campos
   function loadCurrentConfig() {
@@ -115,82 +113,6 @@ document.addEventListener('DOMContentLoaded', function() {
       setTimeout(() => {
         configInfo.style.display = 'none';
       }, 3000);
-    }
-  });
-
-  // Testar conectividade
-  testConnectionBtn.addEventListener('click', async function() {
-    console.log('[Login] Botão de teste clicado');
-    
-    const ip = serverIpInput.value.trim();
-    const port = serverPortInput.value.trim();
-    
-    console.log(`[Login] Valores: IP="${ip}", Port="${port}"`);
-    
-    if (!ip || !port) {
-      console.log('[Login] IP ou porta em branco');
-      configInfo.textContent = 'Preencha IP e Porta para testar';
-      configInfo.className = 'config-info error';
-      configInfo.style.display = 'block';
-      setTimeout(() => configInfo.style.display = 'none', 3000);
-      return;
-    }
-    
-    // Validar formato básico
-    console.log('[Login] Validando configuração...');
-    const validation = serverConfig.validateConfig(ip, port);
-    if (!validation.isValid) {
-      console.log('[Login] Validação falhou:', validation.errors);
-      configInfo.textContent = validation.errors.join(', ');
-      configInfo.className = 'config-info error';
-      configInfo.style.display = 'block';
-      setTimeout(() => configInfo.style.display = 'none', 3000);
-      return;
-    }
-    
-    // Desabilitar botão durante teste
-    testConnectionBtn.disabled = true;
-    testConnectionBtn.textContent = '🔄 Testando...';
-    
-    console.log('[Login] Iniciando teste de conectividade...');
-    
-    try {
-      const result = await connectivityTest.testCustomServer(ip, port);
-      
-      console.log('[Login] Resultado do teste:', result);
-      
-      if (result.success) {
-        configInfo.textContent = `✅ ${result.message}`;
-        configInfo.className = 'config-info success';
-        console.log('[Login] Teste bem-sucedido');
-        
-        if (window.flashNotification && flashNotification.success) {
-          flashNotification.success('Conectividade', result.message, 3000);
-        }
-      } else {
-        configInfo.textContent = `❌ ${result.message}`;
-        configInfo.className = 'config-info error';
-        console.log('[Login] Teste falhou:', result.message);
-        
-        if (window.flashNotification && flashNotification.error) {
-          flashNotification.error('Erro de Conectividade', result.message, 5000);
-        }
-      }
-      
-      configInfo.style.display = 'block';
-      setTimeout(() => configInfo.style.display = 'none', 5000);
-      
-    } catch (error) {
-      console.error('[Login] Erro inesperado no teste:', error);
-      configInfo.textContent = `❌ Erro inesperado: ${error.message}`;
-      configInfo.className = 'config-info error';
-      configInfo.style.display = 'block';
-      setTimeout(() => configInfo.style.display = 'none', 5000);
-    } finally {
-      // Reabilitar botão
-      testConnectionBtn.disabled = false;
-      testConnectionBtn.textContent = '🔗 Testar Conexão';
-      console.log('[Login] Teste finalizado, botão reabilitado');
     }
   });
 
